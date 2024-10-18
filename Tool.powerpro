@@ -27,3 +27,16 @@ endfunction
 function copyNewGUID()
     do("pwsh.exe", "-Command [guid]::NewGuid().toString() | clip")
 endfunction
+
+function downloadMP3FromYoutube()
+    local folder = inputfolder
+    if (folder) do
+        local url = input("Youtube URL to download")
+        if (!url) do
+            quit
+        endif
+
+        local params = "/c yt-dlp --extract-audio --audio-format mp3 " ++ url ++  " -P " ++ "\"" ++ folder ++ "\""
+        do("cmd.exe", params)
+    endif
+endfunction
