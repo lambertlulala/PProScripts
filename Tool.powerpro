@@ -1,0 +1,29 @@
+
+function copyPproconfTo(dstPath)
+    local pproconf = pprofolder ++ "pproconf.pcf"
+    if (file.copy(pproconf, dstPath)) do
+        *Message Successfully copy pproconf.pcf to &(dstPath)
+    else
+        *Message Failed to copy pproconf.pcf to ++ &(dstPath)
+    endif
+endfunction
+
+function emptyRecyclebin()
+    do("cmd.exe", ?+/c pwsh.exe -Command "Clear-RecycleBin -Force"+)
+endfunction
+
+function showRecyclebin()
+    do("shell:RecycleBinFolder")
+endfunction
+
+function openWithTig()
+    local path = inputfolder
+    if (path) do
+        path = path.replacechars("\\", "/")
+        do("tig.exe", "-C \"" ++ path ++ "\"")
+    endif
+endfunction
+
+function copyNewGUID()
+    do("pwsh.exe", "-Command [guid]::NewGuid().toString() | clip")
+endfunction

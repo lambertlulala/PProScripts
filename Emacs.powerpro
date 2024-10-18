@@ -1,0 +1,46 @@
+
+function capture()
+    do("emacsclientw.exe", ?+-na "" -n --eval "(progn (org-capture nil \"t\"))"+)
+    *Window show *GNU Emacs*
+endfunction
+
+function gotoCaptureFile()
+    do("emacsclientw.exe", ?+-na "" -n --eval "(progn (org-capture '(4) \"t\"))"+)
+    *Window show *GNU Emacs*
+endfunction
+
+function captureFromClipboard()
+    do("emacsclientw.exe", ?+-na "" -n --eval "(progn (org-capture nil \"t\") (yank))"+)
+    *Window show *GNU Emacs*
+endfunction
+
+function captureWithoutConfirmation()
+    do("emacsclientw.exe", ?+-na "" -n --eval "(progn (org-capture nil \"t\") (yank) (org-capture-finalize))"+)
+endfunction
+
+function showAgenda(days)
+    local params = ?+-na "" -n --eval "(org-agenda-list + ++ days ++ ?+)"+
+    do("emacsclientw.exe", params)
+    *Window show *GNU Emacs*
+endfunction
+
+function showTodoList()
+    do("emacsclientw.exe", ?+-na "" -n --eval "(org-todo-list)"+)
+    *Window show *GNU Emacs*
+endfunction
+
+function killEmacs()
+    if (processid("emacs.exe") != 0) do
+        do("emacsclientw.exe", ?+-na "" -n --eval "(kill-emacs)"+)
+    endif
+endfunction
+
+function openWithMagit()
+    local path = inputfolder
+    if (path) do
+        path = path.replacechars("\\", "/")
+        // local params = ?+-na "" -n --eval "(progn (select-frame (make-frame)) (magit-status+ ++ ?+\"+ ++ path ++ ?+\")+ ++ ?+(delete-other-windows))"+
+        local params = ?+--eval "(magit-status \"d:/git/cilap\")"+
+        do("emacs.exe", params)
+    endif
+endfunction

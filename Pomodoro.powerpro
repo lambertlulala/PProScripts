@@ -1,0 +1,458 @@
+
+function _autoinit_()
+    global POMODORO_STATUS_NONE = 0
+    global POMODORO_STATUS_FOCUS = 1
+    global POMODORO_STATUS_BREAK = 2
+    global POMODORO_MAX_STATUS_NUMBER = POMODORO_STATUS_BREAK + 1
+
+    global g_PomodoroMapStatusNumberToString = map.create(POMODORO_MAX_STATUS_NUMBER)
+    g_PomodoroMapStatusNumberToString[POMODORO_STATUS_NONE] = "None"
+    g_PomodoroMapStatusNumberToString[POMODORO_STATUS_FOCUS] = "Focus"
+    g_PomodoroMapStatusNumberToString[POMODORO_STATUS_BREAK] = "Break"
+
+    global g_PomodoroMapStatusStringToNumber = map.create(POMODORO_MAX_STATUS_NUMBER)
+    g_PomodoroMapStatusStringToNumber["None"] = POMODORO_STATUS_NONE
+    g_PomodoroMapStatusStringToNumber["Focus"] = POMODORO_STATUS_FOCUS
+    g_PomodoroMapStatusStringToNumber["Break"] = POMODORO_STATUS_BREAK
+
+    global POMODORO_TIMER_STATUS_STOPPED = 0
+    global POMODORO_TIMER_STATUS_RUNNING = 1
+    global POMODORO_TIMER_STATUS_PAUSED = 2
+    global POMODORO_MAX_TIMER_STATUS_NUMBER = POMODORO_TIMER_STATUS_PAUSED + 1
+
+    global g_PomodoroMapTimerStatus = map.create(POMODORO_MAX_TIMER_STATUS_NUMBER)
+    g_PomodoroMapTimerStatus[POMODORO_TIMER_STATUS_STOPPED] = "Stopped"
+    g_PomodoroMapTimerStatus[POMODORO_TIMER_STATUS_RUNNING] = "Running"
+    g_PomodoroMapTimerStatus[POMODORO_TIMER_STATUS_PAUSED] = "Paused"
+
+    global g_PomodoroMapTextColor = map.create(POMODORO_MAX_STATUS_NUMBER)
+    g_PomodoroMapTextColor[POMODORO_STATUS_NONE] = 0xffffff
+    g_PomodoroMapTextColor[POMODORO_STATUS_FOCUS] = 0xffffff
+    g_PomodoroMapTextColor[POMODORO_STATUS_BREAK] = 0xffffff
+
+    global g_PomodoroMapBackColor = map.create(POMODORO_MAX_STATUS_NUMBER)
+    g_PomodoroMapBackColor[POMODORO_STATUS_NONE] = 0
+    g_PomodoroMapBackColor[POMODORO_STATUS_FOCUS] = 0
+    g_PomodoroMapBackColor[POMODORO_STATUS_BREAK] = 0
+
+    global g_PomodoroIndex = 0
+    global g_clName = ""
+    global g_PomodoroPause = 0
+    global g_PomodoroFocusMinutes = 25
+    global g_PomodoroShortBreakMinutes = 5
+    global g_PomodoroLongBreakMinutes = 15
+    global g_PomodoroBreakMinutes = g_PomodoroShortBreakMinutes
+    global g_PomodoroFocusCategory = "Default"
+    global g_PomodoroStatus = POMODORO_STATUS_NONE
+    global g_PomodoroCount = 0
+    global g_PomodoroMaxCount = 4
+    global g_PomodoroEnableAutoStartOnCompletion = 0
+    global g_PomodoroEnableAutoBreak = 0
+    global g_PomodoroEnableAutoFocus = 0
+    global g_PomodoroEvent = 0
+    global g_PomodoroEventCount = 0
+    global g_PomodoroMaxEventCount = 0
+    global g_PomodoroEventTriggerInSeconds = 1
+    global g_PomodoroEventCommand = ".Pomodoro@onEvent"
+    global g_PomodoroNotificationAudioFile = "C:\\Windows\\Media\\Alarm05.wav"
+    global g_PomodoroEnableTimerCountDown = 1
+    global g_PomodoroEnableNotificationSound = 1
+    global g_PomodoroFocusCategoryListFile =  env("%APPDATA%") ++ ?+\PowerPro\scripts\PomodoroFocus.txt+
+    global g_PomodoroLogFile = env("%APPDATA%") ++ ?+\PowerPro_PomodoroLog.txt+
+    global g_PomodoroEnableSetTextColor = 0
+endfunction
+
+function initFromLabel(clName, label)
+    g_PomodoroIndex = cl.GetLabelIndex(clName, label)
+    if (g_PomodoroIndex == "")
+        quit "Failed to set pomodoro index from label"
+    g_clName = clName
+endfunction
+
+function initFromId(clName, id)
+    g_PomodoroIndex = cl.GetIdIndex(clName, id)
+    if (g_PomodoroIndex == "")
+        quit "Failed to set pomodoro index from id"
+    g_clName = clName
+endfunction
+
+function focus()
+    start(g_PomodoroFocusMinutes, POMODORO_STATUS_FOCUS)
+    cl.SetTextColor(g_clName, g_PomodoroIndex, g_PomodoroMapTextColor[POMODORO_STATUS_FOCUS])
+    cl.SetBackColor(g_clName, g_PomodoroIndex, g_PomodoroMapBackColor[POMODORO_STATUS_FOCUS])
+endfunction
+
+function takeABreak()
+    start(g_PomodoroBreakMinutes, POMODORO_STATUS_BREAK)
+    cl.SetTextColor(g_clName, g_PomodoroIndex, g_PomodoroMapTextColor[POMODORO_STATUS_BREAK])
+    cl.SetBackColor(g_clName, g_PomodoroIndex, g_PomodoroMapBackColor[POMODORO_STATUS_BREAK])
+endfunction
+
+function internalStartPomodoro(manual)
+    if (g_PomodoroStatus == POMODORO_STATUS_NONE || g_PomodoroStatus == POMODORO_STATUS_BREAK) do
+        if (manual || g_PomodoroEnableAutoFocus) do
+            focus()
+
+            g_PomodoroCount = g_PomodoroCount % g_PomodoroMaxCount
+            g_PomodoroCount++
+            if (g_PomodoroCount == g_PomodoroMaxCount) do
+                g_PomodoroBreakMinutes = g_PomodoroLongBreakMinutes
+            else
+                g_PomodoroBreakMinutes = g_PomodoroShortBreakMinutes
+            endif
+        endif
+    else
+        if (manual || g_PomodoroEnableAutoBreak) do
+            takeABreak()
+        endif
+    endif
+endfunction
+
+function startPomodoro()
+    if ((!g_PomodoroEvent || !g_PomodoroEvent.exists) && g_PomodoroEventCount == 0) do
+        internalStartPomodoro(1)
+    endif
+endfunction
+
+function pauseOrContinuePomodoro()
+    if (g_PomodoroStatus != POMODORO_STATUS_NONE) do
+        g_PomodoroPause = !g_PomodoroPause
+
+        if (g_PomodoroPause) do
+            destroyEvent()
+        else
+            // continue
+            createEvent(g_PomodoroEventTriggerInSeconds, g_PomodoroEventCount, g_PomodoroEventCommand)
+        endif
+    endif
+endfunction
+
+function skip(status)
+    if (g_PomodoroEvent && g_PomodoroEvent.exists && g_PomodoroStatus == status) do
+        internalStartPomodoro(1)
+    endif
+endfunction
+
+function skipFocus()
+    skip(POMODORO_STATUS_FOCUS)
+endfunction
+
+function skipBreak()
+    skip(POMODORO_STATUS_BREAK)
+endfunction
+
+function skipCurrentStatus()
+    skip(g_PomodoroStatus)
+endfunction
+
+function toggleAutoBreak()
+    g_PomodoroEnableAutoBreak = !g_PomodoroEnableAutoBreak
+endfunction
+
+function toggleAutoFocus()
+    g_PomodoroEnableAutoFocus = !g_PomodoroEnableAutoFocus
+endfunction
+
+function toggleAutoStartOnCompletion()
+    g_PomodoroEnableAutoStartOnCompletion = !g_PomodoroEnableAutoStartOnCompletion
+endfunction
+
+function toggleNotificationSound()
+    g_PomodoroEnableNotificationSound = !g_PomodoroEnableNotificationSound
+endfunction
+
+function toggleTimerCountDown()
+    g_PomodoroEnableTimerCountDown = !g_PomodoroEnableTimerCountDown
+endfunction
+
+function start(durationInMinutes, pomodoroStatus)
+    g_PomodoroStatus = pomodoroStatus
+    g_PomodoroMaxEventCount = durationInMinutes * 60
+    createEvent(g_PomodoroEventTriggerInSeconds, g_PomodoroMaxEventCount, g_PomodoroEventCommand)
+    writeLog("[" ++ getPomodoroStatusString(pomodoroStatus) ++ "]" ++ " Start " ++ g_PomodoroFocusCategory)
+endfunction
+
+function clear()
+    destroyEvent()
+    g_PomodoroPause = 0
+    g_PomodoroEventCount = 0
+    g_PomodoroMaxEventCount = 0
+    g_PomodoroCount = 0
+    g_PomodoroStatus = POMODORO_STATUS_NONE
+    cl.SetTextColor(g_clName, g_PomodoroIndex, g_PomodoroMapTextColor[POMODORO_STATUS_NONE])
+    cl.SetBackColor(g_clName, g_PomodoroIndex, g_PomodoroMapBackColor[POMODORO_STATUS_NONE])
+    writeLog("[Clear] Clear focus on " ++ g_PomodoroFocusCategory)
+endfunction
+
+function setFocusInterval()
+    local interval = inputdefault(g_PomodoroFocusMinutes, "Focus Interval")
+    if (interval) do
+        g_PomodoroFocusMinutes = interval
+        *Message Set focus interval to &(g_PomodoroFocusMinutes).
+    endif
+endfunction
+
+function setBreakInterval()
+    local interval = inputdefault(g_PomodoroBreakMinutes, "Break Interval")
+    if (interval) do
+        g_PomodoroBreakMinutes = interval
+        *Message Set break interval to &(g_PomodoroBreakMinutes).
+    endif
+endfunction
+
+function setShortBreakInterval()
+    local interval = inputdefault(g_PomodoroShortBreakMinutes, "Short Break Interval")
+    if (interval) do
+        g_PomodoroShortBreakMinutes = interval
+        *Message Set short break interval to &(g_PomodoroShortBreakMinutes).
+    endif
+endfunction
+
+function setLongBreakInterval()
+    local interval = inputdefault(g_PomodoroLongBreakMinutes, "Long Break Interval")
+    if (interval) do
+        g_PomodoroLongBreakMinutes = interval
+        *Message Set long break interval to &(g_PomodoroLongBreakMinutes).
+    endif
+endfunction
+
+function setMaxPomodoroCount()
+    local count = inputdefault(g_PomodoroLongBreakMinutes, "Set max pomodoro count for long break")
+    if (count) do
+        g_PomodoroMaxCount = count
+        *Message Set max pomodoro count to &(g_PomodoroMaxCount).
+    endif
+endfunction
+
+function selectNotificationAudioFile()
+    local audioFile = input("Select Notification Sound (Current: " ++ g_PomodoroNotificationAudioFile ++ ")")
+    if (audioFile) do
+        if (file.validpath(audioFile)) do
+            g_PomodoroNotificationAudioFile = audioFile
+            *Message Set notification audio file to &(g_PomodoroNotificationAudioFile).
+        else
+            *Message Error: &(audioFile) is not found.
+        endif
+    endif
+endfunction
+
+function showCompletionMessage(msg)
+    *Message &(msg) *takefocus
+endfunction
+
+function generateTimerString()
+    local left = 0
+    if (g_PomodoroEnableTimerCountDown) do
+        left = g_PomodoroEventCount
+    else
+        left = g_PomodoroMaxEventCount - g_PomodoroEventCount
+    endif
+
+    local hour = left / 3600
+    local min =  left % 3600
+    min = min / 60
+    local sec = left % 60
+    local time = fill("00", hour) ++ ":" ++ fill("00", min) ++ ":" ++ fill("00", sec)
+    return(time)
+endfunction
+
+function editPomodoroFocusCategoryListFile()
+    if (file.validpath(g_PomodoroFocusCategoryListFile)) do
+        do("notepad.exe", g_PomodoroFocusCategoryListFile)
+    else
+        *Message Pomodoro Focus Category List File is not found. Please create a new file and try again.
+    endif
+endfunction
+
+function selectCategory()
+    if (file.validpath(g_PomodoroFocusCategoryListFile)) do
+        local data = file.readall(g_PomodoroFocusCategoryListFile)
+        if (data) do
+            local select = pickstring(ansitoutf8(data),"Select Focus Category", 2)
+            if (select) do
+                g_PomodoroFocusCategory = select
+                *Bar refresh &(g_clName)
+            endif
+        endif
+    else
+        *Message Pomodoro Focus Category List File is not found. Please create a new file and try again.
+    endif
+endfunction
+
+function customizeCategory()
+    local category = input("Customize Focus Category")
+    if (category) do
+        g_PomodoroFocusCategory = category
+        *Bar refresh &(g_clName)
+    endif
+endfunction
+
+function openLogFile()
+    if (file.validpath(g_PomodoroLogFile)) do
+        do(g_PomodoroLogFile)
+    else
+        *Message Pomodoro log file is not found.
+    endif
+endfunction
+
+function exploreLogFile()
+    if (file.validpath(g_PomodoroLogFile)) do
+        do("explorer.exe", "/select," ++ "\"" ++ g_PomodoroLogFile ++ "\"")
+    else
+        *Message Pomodoro log file is not found.
+    endif
+endfunction
+
+function deleteLogFile()
+    local ret = messagebox("yesno", "Delete log file " ++ "\"" ++ g_PomodoroLogFile ++ "\"?")
+    if (6 == ret) do
+        file.delete(g_PomodoroLogFile)
+    else
+        *Message Pomodoro log file is not found.
+    endif
+endfunction
+
+function archiveLogFile()
+    if (file.validpath(g_PomodoroLogFile)) do
+        local pos = revfind(g_PomodoroLogFile, "\\")
+        if (-1 != pos) do
+            local filename = slice(g_PomodoroLogFile, pos + 1, length(g_PomodoroLogFile) - 1)
+            local directory = slice(g_PomodoroLogFile, 0, pos)
+            local archivedLogFile = directory ++ Date.now ++ "_archived_" ++ filename
+            if (file.move(g_PomodoroLogFile, archivedLogFile, 1)) do
+                *Message Successfully archived log file to &(archivedLogFile).
+            else
+                *Message Failed to archive log file
+            endif
+        endif
+    else
+        *Message Pomodoro log file is not found.
+    endif
+endfunction
+
+function getCurrentDateTime()
+    local currentTime = Date.now
+    local year = slice(currentTime, 0, 3)
+    local month = slice(currentTime, 4, 5)
+    local day = slice(currentTime, 6, 7)
+    local hour = slice(currentTime, 8, 9)
+    local minute = slice(currentTime, 10, 11)
+    local second = slice(currentTime, 12, 13)
+    local datetime = year ++ "-" ++ month ++ "-" ++ day ++ " " ++ hour ++ ":" ++ minute ++ ":" ++ second
+    return(datetime)
+endfunction
+
+function writeLog(message)
+    local fp = file.open(g_PomodoroLogFile, "a")
+    if (fp) do
+        local datetime = getCurrentDateTime()
+        fp.writeline(datetime ++ " " ++ message)
+        fp.close
+    endif
+endfunction
+
+function destroyEvent()
+    if (g_PomodoroEvent && g_PomodoroEvent.exists) do
+        g_PomodoroEvent = g_PomodoroEvent.destroy
+    endif
+endfunction
+
+function createEvent(triggerInSeconds, count, command)
+    destroyEvent()
+    g_PomodoroEvent = event.create(triggerInSeconds, count, command)
+endfunction
+
+function onEvent()
+    if (g_PomodoroEvent && g_PomodoroEvent.exists) do
+        g_PomodoroEventCount = g_PomodoroEvent.count
+    else
+        g_PomodoroEventCount = 0
+        onCompletion(g_PomodoroStatus, g_PomodoroFocusCategory)
+
+        if (g_PomodoroEnableAutoStartOnCompletion) do
+            // not manual
+            internalStartPomodoro(0)
+        endif
+    endif
+endfunction
+
+function onCompletion(pomodoroStatus, focusCategory)
+    writeLog("[" ++ getPomodoroStatusString(pomodoroStatus) ++ "]" ++ " Complete focus on " ++ focusCategory)
+    showCompletionMessage("Complete focus.")
+    if (g_PomodoroEnableNotificationSound) do
+        do(g_PomodoroNotificationAudioFile)
+    endif
+endfunction
+
+function getPomodoroStatusString(pomodoroStatus)
+    return(g_PomodoroMapStatusNumberToString[pomodoroStatus])
+endfunction
+
+function getTimerStatus(eventCount)
+    local timerStatus = POMODORO_TIMER_STATUS_STOPPED
+    if (eventCount == 0) do
+        timerStatus = POMODORO_TIMER_STATUS_STOPPED
+    else
+        if (g_PomodoroEvent && g_PomodoroEvent.exists) do
+            timerStatus = POMODORO_TIMER_STATUS_RUNNING
+        else
+            timerStatus = POMODORO_TIMER_STATUS_PAUSED
+        endif
+    endif
+
+    return(timerStatus)
+endfunction
+
+function getTimerStatusString()
+    local timerStatus = getTimerStatus(g_PomodoroEventCount)
+    return(g_PomodoroMapTimerStatus[timerStatus])
+endfunction
+
+function getDisplayString()
+    local displayString = generateTimerString() ++ " " ++ g_PomodoroFocusCategory ++ "  " ++ getPomodoroStatusString(g_PomodoroStatus) ++ "  " ++ g_PomodoroCount
+    return(displayString)
+endfunction
+
+function generateStatusListString()
+    local status = 0
+    local statusList = ""
+    for (status = POMODORO_STATUS_NONE; status <= POMODORO_STATUS_BREAK; status++)
+        statusList = statusList ++ g_PomodoroMapStatusNumberToString[status] ++ "\r"
+    endfor
+
+    return(statusList)
+endfunction
+
+function selectColor()
+    local statusList = generateStatusListString()
+    local statusToSet = pickstring(statusList, "Select status to set color", 2)
+    local colorInfo = class.makestruct("result status color")
+    colorInfo.result = -1
+    if (statusToSet) do
+        colorInfo.status = g_PomodoroMapStatusStringToNumber[statusToSet]
+        colorInfo.color = inputcolor
+        colorInfo.result = 0
+    endif
+
+    return(colorInfo)
+endfunction
+
+function setTextColor()
+    local colorInfo = selectColor()
+    if (colorInfo.result != -1) do
+        g_PomodoroMapTextColor[colorInfo.status] = colorInfo.color
+        if (colorInfo.status == g_PomodoroStatus) do
+            cl.SetTextColor(g_clName, g_PomodoroIndex, colorInfo.color)
+        endif
+    endif
+endfunction
+
+function setBackColor()
+    local colorInfo = selectColor()
+    if (colorInfo.result != -1) do
+        g_PomodoroMapBackColor[colorInfo.status] = colorInfo.color
+        if (colorInfo.status == g_PomodoroStatus) do
+            cl.SetBackColor(g_clName, g_PomodoroIndex, colorInfo.color)
+        endif
+    endif
+endfunction

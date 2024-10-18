@@ -1,0 +1,42 @@
+
+function _autoinit_()
+    global g_schedProc
+    global g_procName = "sched_proc"
+    global g_srcPcf = pprofolder ++ "nopcf.pcf"
+    global g_dstPcf = pprofolder ++ "sched_conf.pcf"
+endfunction
+
+// Create the scheduler process at PowerPro startup
+function createSchedulerProcess()
+    if (file.validpath(g_dstPcf)) do
+        g_schedProc = process.create(g_procName, g_dstPcf)
+    endif
+endfunction
+
+// Create the scheduler process, which is run by the main process
+function importEvents(importCfg, deleteCfg)
+    if (anywindow("configure powerpro*"))
+        quit "Close PowerPro Configure before running"
+    
+    if (anywindow("c=#32770,&,=powerpro"))
+        quit "Close all PowerPro dialogs including alarm messages before running"
+    
+    if (g_schedProc) do
+        g_schedProc.close
+    endif
+    
+    local res = file.copy(g_srcPcf, g_dstPcf)
+    g_schedProc = process.create(g_procName, g_dstPcf)
+    wait.for(anywindow("*" ++ g_procName ++ "*"))
+    g_schedProc.Notify("ImportScheduledEvents@executeImportEvents", importCfg, g_dstPcf, deleteCfg)
+endfunction
+
+// Run in the scheduler process to import scheduled events
+function executeImportEvents(srcCfg, dstPcf, deleteCfg)
+    if (srcCfg && dstPcf && file.validpath(srcCfg)) do
+        configure.importsched(srcCfg)
+        configure.writealltopcf(dstPcf)
+        if (deleteCfg)
+            file.delete(srcCfg)
+    endif
+endfunction
