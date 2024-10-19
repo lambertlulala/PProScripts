@@ -53,7 +53,7 @@ function _autoinit_()
     global g_PomodoroEventCount = 0
     global g_PomodoroMaxEventCount = 0
     global g_PomodoroEventTriggerInSeconds = 1
-    global g_PomodoroEventCommand = ".Pomodoro@onEvent"
+    global g_PomodoroEventCommand = "." ++ scriptname ++ "@onEvent"
     global g_PomodoroNotificationAudioFile = "C:\\Windows\\Media\\Alarm05.wav"
     global g_PomodoroEnableTimerCountDown = 1
     global g_PomodoroEnableNotificationSound = 1
