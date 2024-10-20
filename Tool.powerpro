@@ -40,3 +40,27 @@ function downloadMP3FromYoutube()
         do("cmd.exe", params)
     endif
 endfunction
+
+function showOrgAgenda()
+    local result
+    pipe.listen_off
+    pipe.listen_on("powerpro", 0, "result")
+    file.runwait(0, "cmd.exe", ?+/c wsl.exe emacs -batch -l ~/.emacs.d/init.el -eval '(org-batch-agenda "a" org-agenda-span 30)' > \\.\pipe\Powerpro+, "", "hide")
+    pipe.listen_off
+    pickstring(result, "Org Agenda", 2)
+endfunction
+
+function openWithMagit()
+    local repo = inputfolder
+    if (repo) do
+        local command = "wsl wslpath " ++ "\"" ++ repo ++ "\""
+        local path
+
+        pipe.listen_off
+        pipe.listen_on("powerpro", 0, "path")
+        file.runwait(0, "cmd.exe", "/c " ++ command ++ ?+ > \\.\pipe\Powerpro+, "", "hide")
+        pipe.listen_off
+
+        do("wt.exe", "new-tab wsl emacs -nw -eval '(magit-status " ++ "\\\"" ++ path.removechars("\r\n") ++ "\\\")'")
+    endif
+endfunction
