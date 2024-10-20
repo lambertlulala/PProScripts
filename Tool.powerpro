@@ -64,3 +64,43 @@ function openWithMagit()
         do("wt.exe", "new-tab wsl emacs -nw -eval '(magit-status " ++ "\\\"" ++ path.removechars("\r\n") ++ "\\\")'")
     endif
 endfunction
+
+function switchToWindow()
+    win.setfocus(window("firstwindow", "=PowerPro"))
+
+    local inputTitle = "PPro Switch to window"
+    local inputHandle = window("visiblewindow", "*" ++ inputTitle ++ "*")
+    if (win.exists(inputHandle)) do
+        window.show(inputHandle)
+        quit
+    endif
+
+    local wlist = window("visiblewindow", "*")
+    local windowList
+    for (local j = 1; ; j++)
+        local handle = word(wlist, j)
+        if (handle == "") do
+            break
+        endif
+
+        local text = win.gettext(handle)
+        if (text != "") do
+            local fullPath = window("exefullpath", handle)
+            local display = "[" ++ handle ++ "]    " ++ text ++ "    (" ++ fullPath ++ ")"
+            windowList = windowList ++ display ++ "\r"
+        endif
+    endfor
+
+    local lastFocus = win.under
+    setnextdialogpos(0, 0, 800, 300, "topmost")
+    local sel = pickstring(ansitoutf8(windowList), inputTitle, 2)
+    if (sel) do
+        local idx = find(sel, "]")
+        if (idx > 0) do
+            local handle = slice(sel, 1, idx - 1)
+            window.show(handle)
+        endif
+    else
+        win.show(lastFocus)
+    endif
+endfunction
