@@ -50,6 +50,31 @@ function showOrgAgenda()
     pickstring(result, "Org Agenda", 2)
 endfunction
 
+function convertToLinuxPath(path)
+    local resultPath
+
+    if (find(path, ?+\\wsl+) != -1) do
+        local cvt = path.replacechars("\\", "/")
+        local pos = 2
+        cvt = slice(cvt, pos, length(cvt) - 1)
+        for (local i = 0; i < 2; i++)
+            pos = find(cvt, "/")
+            if (pos != -1) do
+                cvt = slice(cvt, pos + 1, length(cvt) - 1)
+            endif
+        endfor
+        resultPath = "/" ++ cvt
+    else
+        local command = "wsl wslpath " ++ "\"" ++ path ++ "\""
+        pipe.listen_off
+        pipe.listen_on("powerpro", 0, "resultPath")
+        file.runwait(0, "cmd.exe", "/c " ++ command ++ ?+ > \\.\pipe\Powerpro+, "", "hide")
+        pipe.listen_off
+    endif
+
+    return(resultPath.removechars("\r\n"))
+endfunction
+
 function openWithMagit()
     local repo = inputfolder
     if (repo) do
@@ -62,6 +87,50 @@ function openWithMagit()
         pipe.listen_off
 
         do("wt.exe", "new-tab wsl emacs -nw -eval '(magit-status " ++ "\\\"" ++ path.removechars("\r\n") ++ "\\\")'")
+    endif
+endfunction
+
+function editWithEmacs(path)
+    local cvtPath = convertToLinuxPath(path)
+    do("wt.exe", "new-tab wsl emacs -nw \"" ++ cvtPath ++ "\"")
+endfunction
+
+function editWithEmacsDaemon(path)
+    local cvtPath = convertToLinuxPath(path)
+    do("wt.exe", "new-tab wsl emacsclient -nw -a '' \"" ++ cvtPath ++ "\"")
+endfunction
+
+function searchAndPickResult()
+    local result
+    for (local run = 1; run;)
+        local searchPattern = input("Search")
+        if (searchPattern) do
+            local searchResult = pptools.evsearch(searchPattern)
+            if (searchResult) do
+                result = pickstring(searchResult, "Pick Result", 2)
+                if (result) do
+                    run = 0
+                endif
+            endif
+        else
+            run = 0
+        endif
+    endfor
+
+    return(result)
+endfunction
+
+function searchAndEditWithEmacs()
+    local fileToEdit = searchAndPickResult()
+    if (fileToEdit) do
+        editWithEmacs(fileToEdit)
+    endif
+endfunction
+
+function searchAndEditWithEmacsDaemon()
+    local fileToEdit = searchAndPickResult()
+    if (fileToEdit) do
+        editWithEmacsDaemon(fileToEdit)
     endif
 endfunction
 
