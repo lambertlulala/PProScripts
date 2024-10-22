@@ -107,6 +107,7 @@ function searchAndPickResult()
         if (searchPattern) do
             local searchResult = pptools.evsearch(searchPattern)
             if (searchResult) do
+                setnextdialogpos(win.vscreenwidth / 2 - 400, win.vscreenheight / 2 - 200, 800, 400, "topmost")
                 result = pickstring(searchResult, "Pick Result", 2)
                 if (result) do
                     run = 0
