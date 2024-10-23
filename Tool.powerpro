@@ -100,11 +100,17 @@ function editWithEmacsDaemon(path)
     do("wt.exe", "new-tab wsl emacsclient -nw -a '' \"" ++ cvtPath ++ "\"")
 endfunction
 
-function searchAndPickResult()
+function searchAndPickResult(barName)
     local result
     for (local run = 1; run;)
         local searchPattern = input("Search")
         if (searchPattern) do
+            if (cl.exists(barName)) do
+                local hBar = cl.getBarHandle(barName)
+                win.setfocus(hBar)
+            endif
+
+            win.setfocus(window("firstwindow", "=PowerPro"))
             local searchResult = pptools.evsearch(searchPattern)
             if (searchResult) do
                 setnextdialogpos(win.vscreenwidth / 2 - 400, win.vscreenheight / 2 - 200, 800, 400, "topmost")
@@ -135,7 +141,7 @@ function searchAndEditWithEmacsDaemon()
     endif
 endfunction
 
-function switchToWindow()
+function switchToWindow(barName)
     local inputTitle = "PPro Switch to window"
     local inputHandle = window("visiblewindow", "*" ++ inputTitle ++ "*")
     if (win.exists(inputHandle)) do
@@ -166,6 +172,11 @@ function switchToWindow()
             windowList = windowList ++ display ++ "\r"
         endif
     endfor
+
+    if (cl.exists(barName)) do
+        local hBar = cl.getBarHandle(barName)
+        win.setfocus(hBar)
+    endif
 
     local width = 800
     local height = 300
