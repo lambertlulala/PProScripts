@@ -154,8 +154,8 @@ function switchToWindow()
             break
         endif
 
-        local style = win.getexstyle(handle)
-        if ((style & 0x080) && !(style & 0x040000)) do
+        local exStyle = win.getexstyle(handle)
+        if ((exStyle & 0x080) && !(exStyle & 0x040000)) do
             continue
         endif
 
