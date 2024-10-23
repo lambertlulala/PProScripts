@@ -136,14 +136,12 @@ function searchAndEditWithEmacsDaemon()
 endfunction
 
 function switchToWindow()
-    local width = 800
-    local height = 300
-    local x = win.vscreenwidth / 2 - width / 2
-    local y = win.vscreenheight / 2 - height / 2
-
     local inputTitle = "PPro Switch to window"
     local inputHandle = window("visiblewindow", "*" ++ inputTitle ++ "*")
     if (win.exists(inputHandle)) do
+        local rect = win.getrect(inputHandle)
+        local x = word(rect, 1)
+        local y = word(rect, 2)
         win.sendmouse("ab", x, y, "lc")
         quit
     endif
@@ -156,6 +154,11 @@ function switchToWindow()
             break
         endif
 
+        local style = win.getexstyle(handle)
+        if ((style & 0x080) && !(style & 0x040000)) do
+            continue
+        endif
+
         local text = win.gettext(handle)
         if (text != "") do
             local fullPath = window("exefullpath", handle)
@@ -164,6 +167,10 @@ function switchToWindow()
         endif
     endfor
 
+    local width = 800
+    local height = 300
+    local x = win.vscreenwidth / 2 - width / 2
+    local y = win.vscreenheight / 2 - height / 2
     setnextdialogpos(x, y, width, height, "topmost")
     local sel = pickstring(ansitoutf8(windowList), inputTitle, 2)
     if (sel) do
