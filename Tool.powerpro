@@ -192,3 +192,27 @@ function switchToWindow(barName, width, height)
         win.resetfocus(15)
     endif
 endfunction
+
+function navigateToFolder()
+    local item = searchAndPickResult()
+    if (!item) do
+        quit
+    endif
+
+    local folder
+    local lastChar = slice(item, -1)
+    if (lastChar == "\\") do
+        item = slice(item, 0, length(item) - 2)
+    endif
+
+    if (file.isfolder(item)) do
+        folder = item
+    else
+        local pos = revfind(item, "\\")
+        if (pos != -1) do
+            folder = slice(item, 0, pos - 1)
+        endif
+    endif
+
+    *Keys {to *} ^l{w1}&(folder){enter}
+endfunction
