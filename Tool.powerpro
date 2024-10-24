@@ -173,7 +173,6 @@ function switchToWindow(barName, width, height)
         endif
     endfor
 
-    local lastActive = win.active
     if (cl.exists(barName)) do
         local hBar = cl.getBarHandle(barName)
         win.setfocus(hBar)
@@ -190,6 +189,6 @@ function switchToWindow(barName, width, height)
             window.show(handle)
         endif
     else
-        win.setfocus(lastActive)
+        win.resetfocus(15)
     endif
 endfunction
