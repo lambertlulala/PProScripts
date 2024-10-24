@@ -141,7 +141,7 @@ function searchAndEditWithEmacsDaemon()
     endif
 endfunction
 
-function switchToWindow(barName)
+function switchToWindow(barName, width, height)
     local inputTitle = "PPro Switch to window"
     local inputHandle = window("visiblewindow", "*" ++ inputTitle ++ "*")
     if (win.exists(inputHandle)) do
@@ -179,8 +179,6 @@ function switchToWindow(barName)
         win.setfocus(hBar)
     endif
 
-    local width = 800
-    local height = 300
     local x = win.vscreenwidth / 2 - width / 2
     local y = win.vscreenheight / 2 - height / 2
     setnextdialogpos(x, y, width, height, "topmost")
