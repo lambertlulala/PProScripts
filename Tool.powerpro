@@ -232,7 +232,7 @@ function handleClipboard(barName)
     endif
 
     for (local run = 1; run;)
-        local searchResult = pptools.evsearch(?+!"C:\$RECYCLE.BIN" *.PowerProClip+, "dc-")
+        local searchResult = pptools.evsearch(?+!"\$RECYCLE.BIN" *.PowerProClip+, "dc-")
         setnextdialogpos(win.vscreenwidth / 2 - 400, win.vscreenheight / 2 - 200, 800, 400, "topmost")
         local result = pickstring(ansitoutf8(searchResult), inputTitle, 2)
         if (result) do
@@ -240,6 +240,7 @@ function handleClipboard(barName)
             if (action) do
                 switch (_pickedline_)
                     case 1
+                        win.mouseto(win.vscreenwidth / 2, win.vscreenheight / 2)
                         menu.folder(result ++ ".*", "center")
                         break
                     case 2
@@ -259,7 +260,10 @@ function handleClipboard(barName)
                     case 4
                         file.deletenorecycle(result)
                 endswitch
-                run = 0
+
+                if (_pickedline_ > 1) do
+                    run = 0
+                endif
             endif
         else
             run = 0
