@@ -215,3 +215,41 @@ function navigateToFolder(barName)
 
     *Keys {to *} ^l{w1}&(folder){enter}
 endfunction
+
+function handleClipboard(barName)
+    local inputTitle = "PPro Select clipboard item"
+    local inputHandle = window("visiblewindow", "*" ++ inputTitle ++ "*")
+    if (win.exists(inputHandle)) do
+        local rect = win.getrect(inputHandle)
+        local x = word(rect, 1)
+        local y = word(rect, 2)
+        win.sendmouse("ab", x, y, "lc")
+        quit
+    endif
+
+    if (cl.exists(barName)) do
+        win.setfocus(cl.getBarHandle(barName))
+    endif
+
+    for (local run = 1; run;)
+        local searchResult = pptools.evsearch("*.powerproclip", "dc-")
+        setnextdialogpos(win.vscreenwidth / 2 - 400, win.vscreenheight / 2 - 200, 800, 400, "topmost")
+        local result = pickstring(ansitoutf8(searchResult), inputTitle, 2)
+        if (result) do
+            local action = pickstring("Preview\rCopy", inputTitle, 2)
+            if (action) do
+                if (_pickedline_ == 1) do
+                    menu.folder(result ++ ".*", "center")
+                    break
+                elseif (_pickedline_ == 2) do
+                    clip.load(result)
+                    break
+                endif
+            endif
+        else
+            run = 0
+        endif
+    endfor
+
+    win.resetfocus(15)
+endfunction
