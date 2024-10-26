@@ -110,7 +110,6 @@ function searchAndPickResult(barName)
                 win.setfocus(hBar)
             endif
 
-            win.setfocus(window("firstwindow", "=PowerPro"))
             local searchResult = pptools.evsearch(searchPattern)
             if (searchResult) do
                 setnextdialogpos(win.vscreenwidth / 2 - 400, win.vscreenheight / 2 - 200, 800, 400, "topmost")
@@ -127,15 +126,15 @@ function searchAndPickResult(barName)
     return(result)
 endfunction
 
-function searchAndEditWithEmacs()
-    local fileToEdit = searchAndPickResult()
+function searchAndEditWithEmacs(barName)
+    local fileToEdit = searchAndPickResult(barName)
     if (fileToEdit) do
         editWithEmacs(fileToEdit)
     endif
 endfunction
 
-function searchAndEditWithEmacsDaemon()
-    local fileToEdit = searchAndPickResult()
+function searchAndEditWithEmacsDaemon(barName)
+    local fileToEdit = searchAndPickResult(barName)
     if (fileToEdit) do
         editWithEmacsDaemon(fileToEdit)
     endif
@@ -193,8 +192,8 @@ function switchToWindow(barName, width, height)
     endif
 endfunction
 
-function navigateToFolder()
-    local item = searchAndPickResult()
+function navigateToFolder(barName)
+    local item = searchAndPickResult(barName)
     if (!item) do
         quit
     endif
