@@ -232,11 +232,11 @@ function handleClipboard(barName)
     endif
 
     for (local run = 1; run;)
-        local searchResult = pptools.evsearch("*.powerproclip", "dc-")
+        local searchResult = pptools.evsearch(?+!"C:\$RECYCLE.BIN" *.powerproclip+, "dc-")
         setnextdialogpos(win.vscreenwidth / 2 - 400, win.vscreenheight / 2 - 200, 800, 400, "topmost")
         local result = pickstring(ansitoutf8(searchResult), inputTitle, 2)
         if (result) do
-            local action = pickstring("Preview\rCopy\rSave as BMP", inputTitle, 2)
+            local action = pickstring("Preview\rCopy\rSave as BMP\rDelete", inputTitle, 2)
             if (action) do
                 switch (_pickedline_)
                     case 1
@@ -256,6 +256,8 @@ function handleClipboard(barName)
                             file.deletenorecycle(currentData)
                         endif
                         break
+                    case 4
+                        file.deletenorecycle(result)
                 endswitch
                 run = 0
             endif
