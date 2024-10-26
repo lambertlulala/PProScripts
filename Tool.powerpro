@@ -236,7 +236,7 @@ function handleClipboard(barName)
         setnextdialogpos(win.vscreenwidth / 2 - 400, win.vscreenheight / 2 - 200, 800, 400, "topmost")
         local result = pickstring(ansitoutf8(searchResult), inputTitle, 2)
         if (result) do
-            local action = pickstring("Preview\rCopy\rSave as BMP\rDelete", inputTitle, 2)
+            local action = pickstring("Preview\rCopy\rSave as BMP\rExplore\rDelete", inputTitle, 2)
             if (action) do
                 switch (_pickedline_)
                     case 1
@@ -258,7 +258,11 @@ function handleClipboard(barName)
                         endif
                         break
                     case 4
+                        do("explorer", "/select,\"" ++ result ++ "\"")
+                        break
+                    case 5
                         file.deletenorecycle(result)
+                        break;
                 endswitch
 
                 if (_pickedline_ > 1) do
