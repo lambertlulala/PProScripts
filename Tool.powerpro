@@ -236,15 +236,28 @@ function handleClipboard(barName)
         setnextdialogpos(win.vscreenwidth / 2 - 400, win.vscreenheight / 2 - 200, 800, 400, "topmost")
         local result = pickstring(ansitoutf8(searchResult), inputTitle, 2)
         if (result) do
-            local action = pickstring("Preview\rCopy", inputTitle, 2)
+            local action = pickstring("Preview\rCopy\rSave as BMP", inputTitle, 2)
             if (action) do
-                if (_pickedline_ == 1) do
-                    menu.folder(result ++ ".*", "center")
-                    break
-                elseif (_pickedline_ == 2) do
-                    clip.load(result)
-                    break
-                endif
+                switch (_pickedline_)
+                    case 1
+                        menu.folder(result ++ ".*", "center")
+                        break
+                    case 2
+                        clip.load(result)
+                        break
+                    case 3
+                        local pathToSave = inputsaveaspath
+                        if (pathToSave) do
+                            local currentData = env("TEMP") ++ "\\tmp.PowerProClip"
+                            clip.save(currentData)
+                            clip.load(result)
+                            clip.bmptofile(pathToSave)
+                            clip.load(currentData)
+                            file.deletenorecycle(currentData)
+                        endif
+                        break
+                endswitch
+                run = 0
             endif
         else
             run = 0
