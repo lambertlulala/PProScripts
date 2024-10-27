@@ -236,7 +236,7 @@ function handleClipboard(barName)
         setnextdialogpos(win.vscreenwidth / 2 - 400, win.vscreenheight / 2 - 200, 800, 400, "topmost")
         local result = pickstring(ansitoutf8(searchResult), inputTitle, 2)
         if (result) do
-            local action = pickstring("Preview\rCopy\rSave as BMP\rExplore\rDelete\rMove\rClear recent", inputTitle, 2)
+            local action = pickstring("Preview\rShow text\rCopy\rSave as BMP\rExplore\rDelete\rMove\rClear recent", inputTitle, 2)
             if (action) do
                 switch (_pickedline_)
                     case 1
@@ -244,9 +244,19 @@ function handleClipboard(barName)
                         menu.folder(result ++ ".*", "center")
                         break
                     case 2
+                        local currentData = env("TEMP") ++ "\\tmp.PowerProClip"
+                        local tmpNotePath = env("TEMP") ++ "\\tmp_show.txt"
+                        clip.save(currentData)
                         clip.load(result)
+                        clip.tofile(tmpNotePath, "utf8", 1)
+                        clip.load(currentData)
+                        file.deletenorecycle(currentData)
+                        note.open(tmpNotePath, "", 2)
                         break
                     case 3
+                        clip.load(result)
+                        break
+                    case 4
                         local pathToSave = inputsaveaspath
                         if (pathToSave) do
                             local currentData = env("TEMP") ++ "\\tmp.PowerProClip"
@@ -257,13 +267,13 @@ function handleClipboard(barName)
                             file.deletenorecycle(currentData)
                         endif
                         break
-                    case 4
+                    case 5
                         do("explorer", "/select,\"" ++ result ++ "\"")
                         break
-                    case 5
+                    case 6
                         file.deletenorecycle(result)
                         break
-                    case 6
+                    case 7
                         local destFolder = inputfolder
                         if (destFolder) do
                             local pos = revfind(result, "\\")
@@ -271,7 +281,7 @@ function handleClipboard(barName)
                             file.move(result, destPath, 1)
                         endif
                         break
-                    case 7
+                    case 8
                         *Clip ClearRecent
                         break
                 endswitch
