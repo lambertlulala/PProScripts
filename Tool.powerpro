@@ -253,12 +253,14 @@ function handleClipboard(barName)
         local result = pickstring(candidates, inputTitle, 2)
         if (result) do
             result = baseFolder ++ result
-            local action = pickstring("Preview\rShow text\rCopy\rSave as BMP\rExplore\rDelete\rMove\rClear recent", inputTitle, 2)
+            local action = pickstring("Preview\rShow text\rCopy\rSave as BMP\rExplore\rDelete\rMove\rSearch text\rClear recent", inputTitle, 2)
             if (action) do
+                local keepRun = 0
                 switch (_pickedline_)
                     case 1
                         win.mouseto(win.vscreenwidth / 2, win.vscreenheight / 2)
                         menu.folder(result ++ ".*", "center")
+                        keepRun = 1
                         break
                     case 2
                         local currentData = env("TEMP") ++ "\\tmp.PowerProClip"
@@ -303,13 +305,20 @@ function handleClipboard(barName)
                         endif
                         break
                     case 8
+                        local textToSearch = input("Search text")
+                        local ext = ".PowerProClip"
+                        if (textToSearch) do
+                            local folder = pprofolder ++ "clip"
+                            do("cmd.exe", "/c strings -s " ++ "\"" ++ folder ++ "\" | findstr /m " ++ "\"" ++ textToSearch ++ "\" && pause")
+                        endif
+                        keepRun = 1
+                        break
+                    case 9
                         *Clip ClearRecent
                         break
                 endswitch
 
-                if (_pickedline_ > 1) do
-                    run = 0
-                endif
+                run = keepRun
             endif
         else
             run = 0
