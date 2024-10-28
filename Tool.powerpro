@@ -231,11 +231,19 @@ function handleClipboard(barName)
         win.setfocus(cl.getBarHandle(barName))
     endif
 
+    local baseFolder = pprofolder ++ "clip\\"
+    local baseFolderLen = length(baseFolder)
     for (local run = 1; run;)
-        local searchResult = pptools.evsearch(?+!"\$RECYCLE.BIN" *.PowerProClip+, "dc-")
+        local searchResult = pptools.evsearch(baseFolder ++ "*.PowerProClip", "dc-")
+        local candidates
+        for each line clip in searchResult
+            candidates = candidates ++ remove(clip, baseFolderLen) ++ "\r"
+        endfor
+
         setnextdialogpos(win.vscreenwidth / 2 - 400, win.vscreenheight / 2 - 200, 800, 400, "topmost")
-        local result = pickstring(ansitoutf8(searchResult), inputTitle, 2)
+        local result = pickstring(ansitoutf8(candidates), inputTitle, 2)
         if (result) do
+            result = baseFolder ++ result
             local action = pickstring("Preview\rShow text\rCopy\rSave as BMP\rExplore\rDelete\rMove\rClear recent", inputTitle, 2)
             if (action) do
                 switch (_pickedline_)
@@ -274,11 +282,15 @@ function handleClipboard(barName)
                         file.deletenorecycle(result)
                         break
                     case 7
-                        local destFolder = inputfolder
+                        local destFolder = inputfolder(baseFolder)
                         if (destFolder) do
-                            local pos = revfind(result, "\\")
-                            local destPath = destFolder ++ slice(result, pos, length(result) - 1)
-                            file.move(result, destPath, 1)
+                            if (find(destFolder, baseFolder) != -1) do
+                                local pos = revfind(result, "\\")
+                                local destPath = destFolder ++ slice(result, pos, length(result) - 1)
+                                file.move(result, destPath, 1)
+                            else
+                                *Message The clip can only be moved under &(baseFolder).
+                            endif
                         endif
                         break
                     case 8
