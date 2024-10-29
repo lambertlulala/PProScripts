@@ -109,6 +109,15 @@ function everythingSearch(searchPattern)
     return(ansitoutf8(searchResult))
 endfunction
 
+function searchFile(searchPattern)
+    local searchResult
+    local tmpFile = env("TEMP") ++ "\\tmp_search_result.txt"
+    file.runwait(3600000, "cmd.exe", "/c dir /s/b/O-D " ++ "\"" ++ searchPattern ++ "\"" ++ " > " ++ tmpFile, "", "hide")
+    searchResult = file.readall(tmpFile)
+    file.deletenorecycle(tmpFile)
+    return(ansitoutf8(searchResult))
+endfunction
+
 function searchAndPickResult(barName)
     local result
     for (local run = 1; run;)
@@ -243,7 +252,7 @@ function handleClipboard(barName)
     local baseFolder = pprofolder ++ "clip\\"
     local baseFolderLen = length(baseFolder)
     for (local run = 1; run;)
-        local searchResult = everythingSearch(baseFolder ++ "*.PowerProClip" ++ " -sort-date-created")
+        local searchResult = searchFile(baseFolder ++ "*.PowerProClip")
         local candidates
         for each line clip in searchResult
             candidates = candidates ++ remove(clip, baseFolderLen) ++ "\r"
