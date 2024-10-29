@@ -321,7 +321,7 @@ function handleClipboard(barName)
                         local ext = ".PowerProClip"
                         if (textToSearch) do
                             local folder = pprofolder ++ "clip"
-                            do("cmd.exe", "/c strings -s " ++ "\"" ++ folder ++ "\" | findstr /m " ++ "\"" ++ textToSearch ++ "\" && pause")
+                            do("cmd.exe", "/c strings64 -s " ++ "\"" ++ folder ++ "\" | findstr /m " ++ "\"" ++ textToSearch ++ "\" && pause")
                         endif
                         keepRun = 1
                         break
