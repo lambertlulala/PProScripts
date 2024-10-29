@@ -255,13 +255,16 @@ function handleClipboard(barName)
         local searchResult = searchFile(baseFolder ++ "*.PowerProClip")
         local candidates
         for each line clip in searchResult
-            candidates = candidates ++ remove(clip, baseFolderLen) ++ "\r"
+            local item = remove(clip, baseFolderLen)
+            local pos = revfind(item, ".PowerProClip")
+            item = slice(item, pos)
+            candidates = candidates ++ item ++ "\r"
         endfor
 
         setnextdialogpos(win.vscreenwidth / 2 - 400, win.vscreenheight / 2 - 200, 800, 400, "topmost")
         local result = pickstring(candidates, inputTitle, 2)
         if (result) do
-            result = baseFolder ++ result
+            result = baseFolder ++ result ++ ".PowerProClip"
             local action = pickstring("Preview\rShow text\rCopy\rSave as BMP\rExplore\rDelete\rMove\rSearch text\rClear recent", inputTitle, 2)
             if (action) do
                 local keepRun = 0
