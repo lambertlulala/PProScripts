@@ -265,7 +265,7 @@ function handleClipboard(barName)
         local result = pickstring(candidates, inputTitle, 2)
         if (result) do
             result = baseFolder ++ result ++ ".PowerProClip"
-            local action = pickstring("Preview\rShow text\rCopy\rSave as BMP\rExplore\rDelete\rMove\rSearch text\rClear recent", inputTitle, 2)
+            local action = pickstring("Preview\rShow text\rCopy\rSave as BMP\rExplore\rDelete\rMove\rSearch text\rSearch with grwpWin\rClear recent", inputTitle, 2)
             if (action) do
                 local keepRun = 0
                 switch (_pickedline_)
@@ -318,7 +318,6 @@ function handleClipboard(barName)
                         break
                     case 8
                         local textToSearch = input("Search text")
-                        local ext = ".PowerProClip"
                         if (textToSearch) do
                             local folder = pprofolder ++ "clip"
                             do("cmd.exe", "/c strings64 -s " ++ "\"" ++ folder ++ "\" | findstr /m " ++ "\"" ++ textToSearch ++ "\" && pause")
@@ -326,6 +325,14 @@ function handleClipboard(barName)
                         keepRun = 1
                         break
                     case 9
+                        local textToSearch = input("Search with grepWin")
+                        if (textToSearch) do
+                            local folder = pprofolder ++ "clip"
+                            do("grepWin.exe", "/searchpath:\"" ++ folder ++ "\" /searchfor:\"" ++ textToSearch ++ "\" /b:yes /execute")
+                        endif
+                        keepRun = 1
+                        break
+                    case 10
                         *Clip ClearRecent
                         break
                 endswitch
