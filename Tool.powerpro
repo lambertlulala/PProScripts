@@ -267,7 +267,7 @@ function handleClipboard(barName)
                         local tmpNotePath = env("TEMP") ++ "\\tmp_show.txt"
                         clip.save(currentData)
                         clip.load(result)
-                        clip.tofile(tmpNotePath, "utf8", 1)
+                        clip.tofile(tmpNotePath, 1, "utf8")
                         clip.load(currentData)
                         file.deletenorecycle(currentData)
                         note.open(tmpNotePath, "", 2)
