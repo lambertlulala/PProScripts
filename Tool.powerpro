@@ -67,10 +67,10 @@ function convertToLinuxPath(path)
         resultPath = "/" ++ cvt
     else
         local command = "wsl wslpath " ++ "\"" ++ path ++ "\""
-        pipe.listen_off
-        pipe.listen_on("powerpro", 0, "resultPath")
-        file.runwait(0, "cmd.exe", "/c " ++ command ++ ?+ > \\.\pipe\Powerpro+, "", "hide")
-        pipe.listen_off
+        local tmpFile = env("TEMP") ++ "\\tmp_convert.txt"
+        file.runwait(30000, "cmd.exe", "/c " ++ command ++ " > " ++ tmpFile, "", "hide")
+        resultPath = file.readall(tmpFile)
+        file.deletenorecycle(tmpFile)
     endif
 
     return(resultPath.removechars("\r\n"))
