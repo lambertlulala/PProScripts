@@ -252,7 +252,8 @@ function handleClipboard(barName)
     local baseFolder = pprofolder ++ "clip\\"
     local baseFolderLen = length(baseFolder)
     for (local run = 1; run;)
-        local searchResult = searchFile(baseFolder ++ "*.PowerProClip")
+        //local searchResult = searchFile(baseFolder ++ "*.PowerProClip")
+        local searchResult = everythingSearch(baseFolder ++ "*.PowerProClip" ++ " -sort-date-created")
         local candidates
         for each line clip in searchResult
             local item = remove(clip, baseFolderLen)
