@@ -109,6 +109,15 @@ function everythingSearch(searchPattern)
     return(ansitoutf8(searchResult))
 endfunction
 
+function everythingSearchRedirectToTmpFile(searchPattern)
+    local searchResult
+    local tmpFile = env("TEMP") ++ "\\tmp_es_result.txt"
+    file.runwait(60000, "cmd.exe", "/c es.exe " ++ searchPattern ++ " > " ++ tmpFile, "", "hide")
+    searchResult = file.readall(tmpFile)
+    file.deletenorecycle(tmpFile)
+    return(ansitoutf8(searchResult))
+endfunction
+
 function searchFile(searchPattern)
     local searchResult
     local tmpFile = env("TEMP") ++ "\\tmp_search_result.txt"
@@ -128,7 +137,7 @@ function searchAndPickResult(barName)
                 win.setfocus(hBar)
             endif
 
-            local searchResult = everythingSearch(searchPattern)
+            local searchResult = everythingSearchRedirectToTmpFile(searchPattern)
             if (searchResult) do
                 setnextdialogpos(win.vscreenwidth / 2 - 400, win.vscreenheight / 2 - 200, 800, 400, "topmost")
                 result = pickstring(searchResult, "Pick Result", 2)
@@ -253,7 +262,7 @@ function handleClipboard(barName)
     local baseFolderLen = length(baseFolder)
     for (local run = 1; run;)
         //local searchResult = searchFile(baseFolder ++ "*.PowerProClip")
-        local searchResult = everythingSearch(baseFolder ++ "*.PowerProClip" ++ " -sort-date-created")
+        local searchResult = everythingSearchRedirectToTmpFile(baseFolder ++ "*.PowerProClip" ++ " -sort-date-created")
         local candidates
         for each line clip in searchResult
             local item = remove(clip, baseFolderLen)
