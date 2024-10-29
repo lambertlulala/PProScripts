@@ -320,7 +320,8 @@ function handleClipboard(barName)
                         local textToSearch = input("Search text")
                         if (textToSearch) do
                             local folder = pprofolder ++ "clip"
-                            do("cmd.exe", "/c strings64 -s " ++ "\"" ++ folder ++ "\" | findstr /m " ++ "\"" ++ textToSearch ++ "\" && pause")
+                            local defaultSize = 2000 * 1024 // in bytes
+                            do("cmd.exe", "/c strings64 -s -b " ++ defaultSize ++ " " ++ "\"" ++ folder ++ "\" | findstr /m " ++ "\"" ++ textToSearch ++ "\" && pause")
                         endif
                         keepRun = 1
                         break
