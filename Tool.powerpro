@@ -269,7 +269,7 @@ function handleClipboard(barName)
         local result = pickstring(candidates, inputTitle, 2)
         if (result) do
             result = baseFolder ++ result ++ ".PowerProClip"
-            local action = pickstring("Preview\rShow text\rCopy\rSave as BMP\rExplore\rDelete\rMove\rSearch text\rSearch with grepWin\rSearch with dnGrep\rEdit with Emacs\rClear recent", inputTitle, 2)
+            local action = pickstring("Preview\rShow text\rCopy\rSave as BMP\rExplore\rDelete\rMove\rSearch text\rSearch with grepWin\rSearch with dnGrep\rEdit with Emacs\rOpen with InsideClipboard\rOpen with Free Clipboard Viewer\rClear recent", inputTitle, 2)
             if (action) do
                 local keepRun = 0
                 switch (_pickedline_)
@@ -349,6 +349,16 @@ function handleClipboard(barName)
                         editWithEmacs(result)
                         break
                     case 12
+                        clip.load(result)
+                        do("InsideClipboard.exe")
+                        keepRun = 1
+                        break
+                    case 13
+                        clip.load(result)
+                        do("FreeClipViewer.exe")
+                        keepRun = 1
+                        break
+                    case 14
                         *Clip ClearRecent
                         break
                 endswitch
