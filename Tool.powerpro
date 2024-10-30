@@ -94,6 +94,10 @@ function editWithEmacsDaemon(path)
     do("wt.exe", "new-tab wsl emacsclient -nw -a '' \"" ++ cvtPath ++ "\"")
 endfunction
 
+function editWithBowPad(path)
+    do("BowPad.exe", "/path:\"" ++ path ++ "\"")
+endfunction
+
 //function everythingSearch(searchPattern)
 //    local searchResult
 //    pipe.listen_off
@@ -158,6 +162,13 @@ function searchAndEditWithEmacsDaemon(barName)
     local fileToEdit = searchAndPickResult(barName)
     if (fileToEdit) do
         editWithEmacsDaemon(fileToEdit)
+    endif
+endfunction
+
+function searchAndEditWithBowPad(barName)
+    local fileToEdit = searchAndPickResult(barName)
+    if (fileToEdit) do
+        editWithBowPad(fileToEdit)
     endif
 endfunction
 
@@ -349,7 +360,7 @@ function handleClipboard(barName)
                         editWithEmacs(result)
                         break
                     case 12
-                        do("BowPad.exe", "/path:\"" ++ result ++ "\"")
+                        editWithBowPad(result)
                         break
                     case 13
                         clip.load(result)
