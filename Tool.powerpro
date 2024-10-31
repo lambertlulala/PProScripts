@@ -44,7 +44,7 @@ endfunction
 function showOrgAgenda()
     local result
     local tmpFile = env("TEMP") ++ "\\tmp_org_agenda.txt"
-    file.runwait(0, "cmd.exe", ?+/c wsl.exe emacs -batch -l ~/.emacs.d/init.el -eval '(org-batch-agenda "a" org-agenda-span 30)' > + ++ tmpFile, "", "hide")
+    file.runwait(60000, "cmd.exe", ?+/c wsl.exe emacs -batch -l ~/.emacs.d/init.el -eval '(org-batch-agenda "a" org-agenda-span 30)' > + ++ tmpFile, "", "hide")
     result = file.readall(tmpFile)
     file.deletenorecycle(tmpFile)
     pickstring(result, "Org Agenda", 2)
