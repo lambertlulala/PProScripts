@@ -42,7 +42,7 @@ function _autoinit_()
     global g_PomodoroShortBreakMinutes = 5
     global g_PomodoroLongBreakMinutes = 15
     global g_PomodoroBreakMinutes = g_PomodoroShortBreakMinutes
-    global g_PomodoroFocusCategory = "Default"
+    global g_PomodoroTask = "Default"
     global g_PomodoroStatus = POMODORO_STATUS_NONE
     global g_PomodoroCount = 0
     global g_PomodoroMaxCount = 4
@@ -57,7 +57,7 @@ function _autoinit_()
     global g_PomodoroNotificationAudioFile = "C:\\Windows\\Media\\Alarm05.wav"
     global g_PomodoroEnableTimerCountDown = 1
     global g_PomodoroEnableNotificationSound = 1
-    global g_PomodoroFocusCategoryListFile =  env("%APPDATA%") ++ ?+\PowerPro\scripts\PomodoroFocus.txt+
+    global g_PomodoroTaskListFile =  env("%APPDATA%") ++ ?+\PowerPro\scripts\PomodoroFocus.txt+
     global g_PomodoroLogFile = env("%APPDATA%") ++ ?+\PowerPro_PomodoroLog.txt+
     global g_PomodoroEnableSetTextColor = 0
 endfunction
@@ -169,7 +169,7 @@ function start(durationInMinutes, pomodoroStatus)
     g_PomodoroStatus = pomodoroStatus
     g_PomodoroMaxEventCount = durationInMinutes * 60
     createEvent(g_PomodoroEventTriggerInSeconds, g_PomodoroMaxEventCount, g_PomodoroEventCommand)
-    writeLog("[" ++ getPomodoroStatusString(pomodoroStatus) ++ "]" ++ " Start " ++ g_PomodoroFocusCategory)
+    writeLog("[" ++ getPomodoroStatusString(pomodoroStatus) ++ "]" ++ " Start " ++ g_PomodoroTask)
 endfunction
 
 function clear()
@@ -181,7 +181,7 @@ function clear()
     g_PomodoroStatus = POMODORO_STATUS_NONE
     cl.SetTextColor(g_clName, g_PomodoroIndex, g_PomodoroMapTextColor[POMODORO_STATUS_NONE])
     cl.SetBackColor(g_clName, g_PomodoroIndex, g_PomodoroMapBackColor[POMODORO_STATUS_NONE])
-    writeLog("[Clear] Clear focus on " ++ g_PomodoroFocusCategory)
+    writeLog("[Clear] Clear focus on " ++ g_PomodoroTask)
 endfunction
 
 function setFocusInterval()
@@ -256,33 +256,33 @@ function generateTimerString()
     return(time)
 endfunction
 
-function editPomodoroFocusCategoryListFile()
-    if (file.validpath(g_PomodoroFocusCategoryListFile)) do
-        do("notepad.exe", g_PomodoroFocusCategoryListFile)
+function editPomodoroTaskListFile()
+    if (file.validpath(g_PomodoroTaskListFile)) do
+        do("notepad.exe", g_PomodoroTaskListFile)
     else
-        *Message Pomodoro Focus Category List File is not found. Please create a new file and try again.
+        *Message Pomodoro Task List File is not found. Please create a new file and try again.
     endif
 endfunction
 
-function selectCategory()
-    if (file.validpath(g_PomodoroFocusCategoryListFile)) do
-        local data = file.readall(g_PomodoroFocusCategoryListFile)
+function selectTask()
+    if (file.validpath(g_PomodoroTaskListFile)) do
+        local data = file.readall(g_PomodoroTaskListFile)
         if (data) do
-            local select = pickstring(ansitoutf8(data),"Select Focus Category", 2)
+            local select = pickstring(ansitoutf8(data),"Select Task", 2)
             if (select) do
-                g_PomodoroFocusCategory = select
+                g_PomodoroTask = select
                 *Bar refresh &(g_clName)
             endif
         endif
     else
-        *Message Pomodoro Focus Category List File is not found. Please create a new file and try again.
+        *Message Pomodoro Task List File is not found. Please create a new file and try again.
     endif
 endfunction
 
-function customizeCategory()
-    local category = input("Customize Focus Category")
-    if (category) do
-        g_PomodoroFocusCategory = category
+function customizeTask()
+    local task = input("Customize Task")
+    if (task) do
+        g_PomodoroTask = task
         *Bar refresh &(g_clName)
     endif
 endfunction
@@ -367,7 +367,7 @@ function onEvent()
         g_PomodoroEventCount = g_PomodoroEvent.count
     else
         g_PomodoroEventCount = 0
-        onCompletion(g_PomodoroStatus, g_PomodoroFocusCategory)
+        onCompletion(g_PomodoroStatus, g_PomodoroTask)
 
         if (g_PomodoroEnableAutoStartOnCompletion) do
             // not manual
@@ -376,8 +376,8 @@ function onEvent()
     endif
 endfunction
 
-function onCompletion(pomodoroStatus, focusCategory)
-    writeLog("[" ++ getPomodoroStatusString(pomodoroStatus) ++ "]" ++ " Complete focus on " ++ focusCategory)
+function onCompletion(pomodoroStatus, task)
+    writeLog("[" ++ getPomodoroStatusString(pomodoroStatus) ++ "]" ++ " Complete focus on " ++ task)
     showCompletionMessage("Complete focus.")
     if (g_PomodoroEnableNotificationSound) do
         do(g_PomodoroNotificationAudioFile)
@@ -409,7 +409,7 @@ function getTimerStatusString()
 endfunction
 
 function getDisplayString()
-    local displayString = generateTimerString() ++ " " ++ g_PomodoroFocusCategory ++ "  " ++ getPomodoroStatusString(g_PomodoroStatus) ++ "  " ++ g_PomodoroCount
+    local displayString = generateTimerString() ++ " " ++ g_PomodoroTask ++ "  " ++ getPomodoroStatusString(g_PomodoroStatus) ++ "  " ++ g_PomodoroCount
     return(displayString)
 endfunction
 
