@@ -177,7 +177,7 @@ function searchAndEditWithBowPad(barName)
 endfunction
 
 function switchToWindow(barName, width, height)
-    local inputTitle = "PPro Switch to window"
+    local inputTitle = "Switch to window"
     local inputHandle = window("visiblewindow", "*" ++ inputTitle ++ "*")
     if (win.exists(inputHandle)) do
         local rect = win.getrect(inputHandle)
@@ -253,7 +253,7 @@ function navigateToFolder(barName)
 endfunction
 
 function handleClipboard(barName)
-    local inputTitle = "PPro Select clipboard item"
+    local inputTitle = "Select clipboard item"
     local inputHandle = window("visiblewindow", "*" ++ inputTitle ++ "*")
     if (win.exists(inputHandle)) do
         local rect = win.getrect(inputHandle)
