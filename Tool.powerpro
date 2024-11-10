@@ -269,17 +269,18 @@ function handleClipboard(barName)
 
     local baseFolder = pprofolder ++ "clip\\"
     local baseFolderLen = length(baseFolder)
-    for (local run = 1; run;)
-        //local searchResult = searchFile(baseFolder ++ "*.PowerProClip")
-        local searchResult = everythingSearchRedirectToTmpFile(baseFolder ++ "*.PowerProClip" ++ " -sort-date-created")
-        local candidates
-        for each line clip in searchResult
-            local item = remove(clip, baseFolderLen)
-            local pos = revfind(item, ".PowerProClip")
-            item = slice(item, pos)
-            candidates = candidates ++ item ++ "\r"
-        endfor
 
+    //local searchResult = searchFile(baseFolder ++ "*.PowerProClip")
+    local searchResult = everythingSearchRedirectToTmpFile(baseFolder ++ "*.PowerProClip" ++ " -sort-date-created")
+    local candidates
+    for each line clip in searchResult
+        local item = remove(clip, baseFolderLen)
+        local pos = revfind(item, ".PowerProClip")
+        item = slice(item, pos)
+        candidates = candidates ++ item ++ "\r"
+    endfor
+
+    for (local run = 1; run;)
         setnextdialogpos(win.vscreenwidth / 2 - 400, win.vscreenheight / 2 - 200, 800, 400, "topmost")
         local result = pickstring(candidates, inputTitle, 2)
         if (result) do
