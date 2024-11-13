@@ -102,6 +102,10 @@ function editWithBowPad(path)
     do("BowPad.exe", "/path:\"" ++ path ++ "\"")
 endfunction
 
+function editWithAkelPad(path)
+    do(?+C:\Program Files\AkelPad\AkelPad.exe+, "/OpenFile \"" ++ path ++ "\"")
+endfunction
+
 //function everythingSearch(searchPattern)
 //    local searchResult
 //    pipe.listen_off
@@ -173,6 +177,13 @@ function searchAndEditWithBowPad(barName)
     local fileToEdit = searchAndPickResult(barName)
     if (fileToEdit) do
         editWithBowPad(fileToEdit)
+    endif
+endfunction
+
+function searchAndEditWithAkelPad(barName)
+    local fileToEdit = searchAndPickResult(barName)
+    if (fileToEdit) do
+        editWithAkelPad(fileToEdit)
     endif
 endfunction
 
@@ -285,7 +296,7 @@ function handleClipboard(barName)
         local result = pickstring(candidates, inputTitle, 2)
         if (result) do
             result = baseFolder ++ result ++ ".PowerProClip"
-            local action = pickstring("Preview\rShow text\rCopy\rSave as BMP\rExplore\rDelete\rMove\rSearch text\rSearch with grepWin\rSearch with dnGrep\rEdit with Emacs\rEdit with BowPad\rOpen with InsideClipboard\rOpen with Free Clipboard Viewer\rClear recent", inputTitle, 2)
+            local action = pickstring("Preview\rShow text\rCopy\rSave as BMP\rExplore\rDelete\rMove\rSearch text\rSearch with grepWin\rSearch with dnGrep\rEdit with Emacs\rEdit with BowPad\rEdit with AkelPad\rOpen with InsideClipboard\rOpen with Free Clipboard Viewer\rClear recent", inputTitle, 2)
             if (action) do
                 local keepRun = 0
                 switch (_pickedline_)
@@ -368,16 +379,19 @@ function handleClipboard(barName)
                         editWithBowPad(result)
                         break
                     case 13
+                        editWithAkelPad(result)
+                        break
+                    case 14
                         clip.load(result)
                         do("InsideClipboard.exe")
                         keepRun = 1
                         break
-                    case 14
+                    case 15
                         clip.load(result)
                         do("FreeClipViewer.exe")
                         keepRun = 1
                         break
-                    case 15
+                    case 16
                         *Clip ClearRecent
                         break
                 endswitch
