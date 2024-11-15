@@ -124,6 +124,36 @@ function everythingSearchRedirectToTmpFile(searchPattern)
     return(ansitoutf8(searchResult))
 endfunction
 
+function filterClipsWithES(text)
+    local searchPattern = pprofolder ++ "clip\\*.powerproclip" ++ " utf16content:" ++ "\"" ++ text ++ "\""
+    local results = everythingSearchRedirectToTmpFile(searchPattern)
+    return(results)
+endfunction
+
+function searchClipTextWithES(clipFolder, clipFolderLen, inputTitle)
+    local result = 0
+    local textToSearch = input("Search clip text with ES")
+    if (textToSearch) do
+        local filteredResult = filterClipsWithES(textToSearch)
+        local filteredCandidates
+        for each line clip in filteredResult
+            local item = remove(clip, clipFolderLen)
+            local pos = revfind(item, ".PowerProClip")
+            item = slice(item, pos)
+            filteredCandidates = filteredCandidates ++ item ++ "\r"
+        endfor
+
+        setnextdialogpos(win.vscreenwidth / 2 - 400, win.vscreenheight / 2 - 200, 800, 400, "topmost")
+        local pickedResult = pickstring(filteredCandidates, inputTitle, 2)
+        if (pickedResult) do
+            clip.load(clipFolder ++ pickedResult ++ ".PowerProClip")
+            result = 1
+        endif
+    endif
+
+    return(result)
+endfunction
+
 function searchFile(searchPattern)
     local searchResult
     local tmpFile = env("TEMP") ++ "\\tmp_search_result.txt"
@@ -296,7 +326,7 @@ function handleClipboard(barName)
         local result = pickstring(candidates, inputTitle, 2)
         if (result) do
             result = baseFolder ++ result ++ ".PowerProClip"
-            local action = pickstring("Preview\rShow text\rCopy\rSave as BMP\rExplore\rDelete\rMove\rSearch text\rSearch with grepWin\rSearch with dnGrep\rEdit with Emacs\rEdit with BowPad\rEdit with AkelPad\rOpen with InsideClipboard\rOpen with Free Clipboard Viewer\rClear recent", inputTitle, 2)
+            local action = pickstring("Preview\rShow text\rCopy\rSave as BMP\rExplore\rDelete\rMove\rSearch text\rSearch with grepWin\rSearch with dnGrep\rEdit with Emacs\rEdit with BowPad\rEdit with AkelPad\rOpen with InsideClipboard\rOpen with Free Clipboard Viewer\rSearch clip text with ES\rClear recent", inputTitle, 2)
             if (action) do
                 local keepRun = 0
                 switch (_pickedline_)
@@ -392,6 +422,10 @@ function handleClipboard(barName)
                         keepRun = 1
                         break
                     case 16
+                        local ret = searchClipTextWithES(baseFolder, baseFolderLen, inputTitle)
+                        keepRun = !ret
+                        break
+                    case 17
                         *Clip ClearRecent
                         break
                 endswitch
