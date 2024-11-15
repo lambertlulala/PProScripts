@@ -326,7 +326,7 @@ function handleClipboard(barName)
         local result = pickstring(candidates, inputTitle, 2)
         if (result) do
             result = baseFolder ++ result ++ ".PowerProClip"
-            local action = pickstring("Preview\rShow text\rCopy\rSave as BMP\rExplore\rDelete\rMove\rSearch text\rSearch with grepWin\rSearch with dnGrep\rEdit with Emacs\rEdit with BowPad\rEdit with AkelPad\rOpen with InsideClipboard\rOpen with Free Clipboard Viewer\rSearch clip text with ES\rClear recent", inputTitle, 2)
+            local action = pickstring("Preview\rShow text\rCopy\rSave as BMP\rExplore\rDelete\rMove\rSearch text\rSearch with grepWin\rSearch with dnGrep\rSearch clip text with ES\rEdit with Emacs\rEdit with BowPad\rEdit with AkelPad\rOpen with InsideClipboard\rOpen with Free Clipboard Viewer\rClear recent", inputTitle, 2)
             if (action) do
                 local keepRun = 0
                 switch (_pickedline_)
@@ -403,27 +403,27 @@ function handleClipboard(barName)
                         keepRun = 1
                         break
                     case 11
-                        editWithEmacs(result)
+                        local ret = searchClipTextWithES(baseFolder, baseFolderLen, inputTitle)
+                        keepRun = !ret
                         break
                     case 12
-                        editWithBowPad(result)
+                        editWithEmacs(result)
                         break
                     case 13
-                        editWithAkelPad(result)
+                        editWithBowPad(result)
                         break
                     case 14
+                        editWithAkelPad(result)
+                        break
+                    case 15
                         clip.load(result)
                         do("InsideClipboard.exe")
                         keepRun = 1
                         break
-                    case 15
+                    case 16
                         clip.load(result)
                         do("FreeClipViewer.exe")
                         keepRun = 1
-                        break
-                    case 16
-                        local ret = searchClipTextWithES(baseFolder, baseFolderLen, inputTitle)
-                        keepRun = !ret
                         break
                     case 17
                         *Clip ClearRecent
