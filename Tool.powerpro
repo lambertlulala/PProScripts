@@ -427,6 +427,7 @@ function handleClipboard(barName)
                         break
                     case 17
                         *Clip ClearRecent
+                        do("cmd.exe", "/c del /Q " ++ pprofolder ++ "clip\\captured\\*")
                         break
                 endswitch
 

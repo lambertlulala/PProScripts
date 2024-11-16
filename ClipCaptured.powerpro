@@ -1,0 +1,16 @@
+local capturedFolder = pprofolder ++ "clip\\captured"
+if (!file.isfolder(capturedFolder)) do
+    file.createdirectory(capturedFolder)
+endif
+
+local path = arg(1)
+local posBeg = revfind(path, "\\")
+local filename = slice(path, posBeg + 1, length(path))
+local maxLen = 48
+local ext = ".PowerProClip"
+if (length(filename) - length(ext) > maxLen) do
+    local pos = posBeg + 1
+    filename = slice(path, pos, pos + maxLen) ++ ext
+endif
+
+file.move(path, capturedFolder ++ "\\" ++ filename, 1)
