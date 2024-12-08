@@ -8,11 +8,11 @@ local posBeg = revfind(path, "\\")
 local filename = slice(path, posBeg + 1, length(path))
 
 // Truncate the filename if needed
-//local maxLen = 48
-//local ext = ".PowerProClip"
-//if (length(filename) - length(ext) > maxLen) do
-//    local pos = posBeg + 1
-//    filename = slice(path, pos, pos + maxLen) ++ ext
-//endif
+local maxLen = 48
+local ext = ".PowerProClip"
+if (length(filename) - length(ext) > maxLen) do
+    local pos = posBeg + 1
+    filename = slice(path, pos, pos + maxLen) ++ ext
+endif
 
 file.move(path, capturedFolder ++ "\\" ++ filename, 1)
