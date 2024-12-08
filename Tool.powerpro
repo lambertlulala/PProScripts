@@ -118,7 +118,7 @@ endfunction
 function everythingSearchRedirectToTmpFile(searchPattern)
     local searchResult
     local tmpFile = env("TEMP") ++ "\\tmp_es_result.txt"
-    file.runwait(60000, "cmd.exe", "/c es.exe " ++ searchPattern ++ " -export-txt " ++ tmpFile, "", "hide")
+    file.runwait(60000, "es.exe", searchPattern ++ " -export-txt " ++ tmpFile, "", "hide")
     searchResult = file.readall(tmpFile)
     file.deletenorecycle(tmpFile)
     return(searchResult)
