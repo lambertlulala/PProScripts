@@ -163,6 +163,17 @@ function searchFile(searchPattern)
     return(ansitoutf8(searchResult))
 endfunction
 
+function listAllClipFiles()
+    local searchResult
+    local tmpFile = env("TEMP") ++ "\\tmp_search_result.txt"
+    local baseFolder = pprofolder ++ "clip"
+    local cmd = "cd " ++ "\"" ++ baseFolder ++ "\"" ++ " && Get-ChildItem -Recurse \"*.powerproclip\" | Sort-Object LastWriteTime -Descending | ForEach-Object { $_.FullName }"
+    file.runwait(3600000, "pwsh.exe", "-Command " ++ cmd ++ " > " ++ tmpFile, "", "hide")
+    searchResult = file.readall(tmpFile)
+    file.deletenorecycle(tmpFile)
+    return(searchResult)
+endfunction
+
 function searchAndPickResult(barName)
     local result
     for (local run = 1; run;)
@@ -312,7 +323,8 @@ function handleClipboard(barName)
     local baseFolderLen = length(baseFolder)
 
     //local searchResult = searchFile(baseFolder ++ "*.PowerProClip")
-    local searchResult = everythingSearchRedirectToTmpFile(baseFolder ++ "*.PowerProClip" ++ " -sort-date-created")
+    //local searchResult = everythingSearchRedirectToTmpFile(baseFolder ++ "*.PowerProClip" ++ " -sort-date-created")
+    local searchResult = listAllClipFiles()
     local candidates
     for each line clip in searchResult
         local item = remove(clip, baseFolderLen)
