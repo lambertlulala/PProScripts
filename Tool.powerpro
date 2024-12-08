@@ -154,6 +154,30 @@ function searchClipTextWithES(clipFolder, clipFolderLen, inputTitle)
     return(result)
 endfunction
 
+function searchClipTextWithPwsh(clipFolder, clipFolderLen, inputTitle)
+    local result = 0
+    local textToSearch = input("Search clip text with Pwsh")
+    if (textToSearch) do
+        local filteredResult = searchTextInAllClipFiles(textToSearch)
+        local filteredCandidates
+        for each line clip in filteredResult
+            local item = remove(clip, clipFolderLen)
+            local pos = revfind(item, ".PowerProClip")
+            item = slice(item, pos)
+            filteredCandidates = filteredCandidates ++ item ++ "\r"
+        endfor
+
+        setnextdialogpos(win.vscreenwidth / 2 - 400, win.vscreenheight / 2 - 200, 800, 400, "topmost")
+        local pickedResult = pickstring(filteredCandidates, inputTitle, 2)
+        if (pickedResult) do
+            clip.load(clipFolder ++ pickedResult ++ ".PowerProClip")
+            result = 1
+        endif
+    endif
+
+    return(result)
+endfunction
+
 function searchFile(searchPattern)
     local searchResult
     local tmpFile = env("TEMP") ++ "\\tmp_search_result.txt"
@@ -168,6 +192,17 @@ function listAllClipFiles()
     local tmpFile = env("TEMP") ++ "\\tmp_search_result.txt"
     local baseFolder = pprofolder ++ "clip"
     local cmd = "cd " ++ "\"" ++ baseFolder ++ "\"" ++ " && Get-ChildItem -Recurse \"*.powerproclip\" | Sort-Object LastWriteTime -Descending | ForEach-Object { $_.FullName }"
+    file.runwait(3600000, "pwsh.exe", "-Command " ++ cmd ++ " > " ++ tmpFile, "", "hide")
+    searchResult = file.readall(tmpFile)
+    file.deletenorecycle(tmpFile)
+    return(searchResult)
+endfunction
+
+function searchTextInAllClipFiles(searchText)
+    local searchResult
+    local tmpFile = env("TEMP") ++ "\\tmp_search_text_result.txt"
+    local baseFolder = pprofolder ++ "clip"
+    local cmd = "cd " ++ "\"" ++ baseFolder ++ "\"" ++ " && Get-ChildItem -Recurse \"*.powerproclip\" | Select-String -Pattern " ++ "\"" ++ searchText ++ "\"" ++ " -Encoding \"utf-16\" | Select-Object -ExpandProperty Path"
     file.runwait(3600000, "pwsh.exe", "-Command " ++ cmd ++ " > " ++ tmpFile, "", "hide")
     searchResult = file.readall(tmpFile)
     file.deletenorecycle(tmpFile)
@@ -338,7 +373,7 @@ function handleClipboard(barName)
         local result = pickstring(candidates, inputTitle, 2)
         if (result) do
             result = baseFolder ++ result ++ ".PowerProClip"
-            local action = pickstring("Preview\rShow text\rCopy\rSave as BMP\rExplore\rDelete\rMove\rSearch text\rSearch with grepWin\rSearch with dnGrep\rSearch clip text with ES\rEdit with Emacs\rEdit with BowPad\rEdit with AkelPad\rOpen with InsideClipboard\rOpen with Free Clipboard Viewer\rClear recent", inputTitle, 2)
+            local action = pickstring("Preview\rShow text\rCopy\rSave as BMP\rExplore\rDelete\rMove\rSearch text\rSearch with grepWin\rSearch with dnGrep\rSearch clip text with Pwsh\rEdit with Emacs\rEdit with BowPad\rEdit with AkelPad\rOpen with InsideClipboard\rOpen with Free Clipboard Viewer\rClear recent", inputTitle, 2)
             if (action) do
                 local keepRun = 0
                 switch (_pickedline_)
@@ -415,7 +450,7 @@ function handleClipboard(barName)
                         keepRun = 1
                         break
                     case 11
-                        local ret = searchClipTextWithES(baseFolder, baseFolderLen, inputTitle)
+                        local ret = searchClipTextWithPwsh(baseFolder, baseFolderLen, inputTitle)
                         keepRun = !ret
                         break
                     case 12
