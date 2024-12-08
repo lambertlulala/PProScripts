@@ -268,7 +268,7 @@ function switchToWindow(barName, width, height)
     local x = win.vscreenwidth / 2 - width / 2
     local y = win.vscreenheight / 2 - height / 2
     setnextdialogpos(x, y, width, height, "topmost")
-    local sel = pickstring(ansitoutf8(windowList), inputTitle, 2)
+    local sel = pickstring(windowList, inputTitle, 2)
     if (sel) do
         local idx = find(sel, "]")
         if (idx > 0) do
