@@ -99,7 +99,7 @@ function editWithEmacsDaemon(path)
 endfunction
 
 function editWithBowPad(path)
-    do("BowPad.exe", "/path:\"" ++ path ++ "\"")
+    do(?+C:\Program Files\BowPad\BowPad.exe+, "/path:\"" ++ path ++ "\"")
 endfunction
 
 function editWithAkelPad(path)
@@ -410,7 +410,7 @@ function handleClipboard(barName)
                         local textToSearch = input("Search with dnGrep")
                         if (textToSearch) do
                             local folder = pprofolder ++ "clip"
-                            do("dnGrep.exe", "/f \"" ++ folder ++ "\"" ++ " /pm *.PowerProClip" ++ " /s \"" ++ textToSearch ++ "\"")
+                            do(?+C:\Program Files\dnGrep\dnGREP.exe+, "/f \"" ++ folder ++ "\"" ++ " /pm *.PowerProClip" ++ " /s \"" ++ textToSearch ++ "\"")
                         endif
                         keepRun = 1
                         break
