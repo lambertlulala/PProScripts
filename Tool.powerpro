@@ -358,8 +358,13 @@ function handleClipboard(barName)
     local baseFolderLen = length(baseFolder)
 
     //local searchResult = searchFile(baseFolder ++ "*.PowerProClip")
-    //local searchResult = everythingSearchRedirectToTmpFile(baseFolder ++ "*.PowerProClip" ++ " -sort-date-created")
-    local searchResult = listAllClipFiles()
+    local searchResult
+    if (file.findexe("es.exe")) do
+        searchResult = everythingSearchRedirectToTmpFile(baseFolder ++ "*.PowerProClip" ++ " -sort-date-created")
+    else
+        searchResult = listAllClipFiles()
+    endif
+
     local candidates
     for each line clip in searchResult
         local item = remove(clip, baseFolderLen)
