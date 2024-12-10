@@ -9,7 +9,7 @@ function copyPproconfTo(dstPath)
 endfunction
 
 function emptyRecyclebin()
-    do("cmd.exe", ?+/c pwsh.exe -Command "Clear-RecycleBin -Force"+)
+    do("pwsh.exe", ?+-Command "Clear-RecycleBin -Force"+)
 endfunction
 
 function showRecyclebin()
