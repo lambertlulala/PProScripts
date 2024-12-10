@@ -362,7 +362,7 @@ function handleClipboard(barName)
     //if (file.findexe("es.exe")) do
     //    searchResult = everythingSearchRedirectToTmpFile(baseFolder ++ "*.PowerProClip" ++ " -sort-date-created")
     //else
-    //    searchResult = listAllClipFiles()
+    //    searchResult = listAllClipFiles(baseFolder)
     //endif
 
     local searchResult = listAllClipFiles(baseFolder)
