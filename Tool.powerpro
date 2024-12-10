@@ -187,11 +187,11 @@ function searchFile(searchPattern)
     return(ansitoutf8(searchResult))
 endfunction
 
-function listAllClipFiles()
+function listAllClipFiles(baseFolder)
     local searchResult
     local tmpFile = env("TEMP") ++ "\\tmp_search_result.txt"
-    local baseFolder = pprofolder ++ "clip"
-    local cmd = "cd " ++ "\"" ++ baseFolder ++ "\"" ++ " && Get-ChildItem -Recurse \"*.powerproclip\" | Sort-Object LastWriteTime -Descending | ForEach-Object { $_.FullName }"
+    local folder = trim(baseFolder, "\\", 2)
+    local cmd = "cd " ++ "\"" ++ folder ++ "\"" ++ " && Get-ChildItem -Recurse \"*.powerproclip\" | Sort-Object LastWriteTime -Descending | ForEach-Object { $_.FullName }"
     file.runwait(3600000, "pwsh.exe", "-Command " ++ cmd ++ " > " ++ tmpFile, "", "hide")
     searchResult = file.readall(tmpFile)
     file.deletenorecycle(tmpFile)
@@ -358,13 +358,14 @@ function handleClipboard(barName)
     local baseFolderLen = length(baseFolder)
 
     //local searchResult = searchFile(baseFolder ++ "*.PowerProClip")
-    local searchResult
-    if (file.findexe("es.exe")) do
-        searchResult = everythingSearchRedirectToTmpFile(baseFolder ++ "*.PowerProClip" ++ " -sort-date-created")
-    else
-        searchResult = listAllClipFiles()
-    endif
+    //local searchResult
+    //if (file.findexe("es.exe")) do
+    //    searchResult = everythingSearchRedirectToTmpFile(baseFolder ++ "*.PowerProClip" ++ " -sort-date-created")
+    //else
+    //    searchResult = listAllClipFiles()
+    //endif
 
+    local searchResult = listAllClipFiles(baseFolder)
     local candidates
     for each line clip in searchResult
         local item = remove(clip, baseFolderLen)
@@ -378,7 +379,7 @@ function handleClipboard(barName)
         local result = pickstring(candidates, inputTitle, 2)
         if (result) do
             result = baseFolder ++ result ++ ".PowerProClip"
-            local action = pickstring("Preview\rShow text\rCopy\rSave as BMP\rExplore\rDelete\rMove\rSearch text\rSearch with grepWin\rSearch with dnGrep\rSearch clip text with Pwsh\rEdit with Emacs\rEdit with BowPad\rEdit with AkelPad\rOpen with InsideClipboard\rOpen with Free Clipboard Viewer\rClear recent", inputTitle, 2)
+            local action = pickstring("Preview\rShow text\rCopy\rEdit\rSave as BMP\rExplore\rDelete\rMove\rSearch text\rSearch with grepWin\rSearch with dnGrep\rSearch clip text with Pwsh\rClear recent", inputTitle, 2)
             if (action) do
                 local keepRun = 0
                 switch (_pickedline_)
@@ -401,6 +402,22 @@ function handleClipboard(barName)
                         clip.load(result)
                         break
                     case 4
+                        local currentData = env("TEMP") ++ "\\tmp.PowerProClip"
+                        local tmpClipPath = env("TEMP") ++ "\\tmp_edit_clip.txt"
+                        clip.save(currentData)
+                        clip.load(result)
+                        clip.tofile(tmpClipPath, 1, "utf8")
+
+                        file.runwait(3600000, "notepad.exe", tmpClipPath)
+                        clip.load(tmpClipPath)
+                        clip.save(result)
+
+                        clip.load(currentData)
+                        file.deletenorecycle(currentData)
+                        file.deletenorecycle(tmpClipPath)
+                        keepRun = 1
+                        break
+                    case 5
                         local pathToSave = inputsaveaspath
                         if (pathToSave) do
                             local currentData = env("TEMP") ++ "\\tmp.PowerProClip"
@@ -411,13 +428,13 @@ function handleClipboard(barName)
                             file.deletenorecycle(currentData)
                         endif
                         break
-                    case 5
+                    case 6
                         do("explorer", "/select,\"" ++ result ++ "\"")
                         break
-                    case 6
+                    case 7
                         file.deletenorecycle(result)
                         break
-                    case 7
+                    case 8
                         local destFolder = inputfolder(baseFolder)
                         if (destFolder) do
                             if (find(destFolder, baseFolder) != -1) do
@@ -429,7 +446,7 @@ function handleClipboard(barName)
                             endif
                         endif
                         break
-                    case 8
+                    case 9
                         local textToSearch = input("Search text")
                         if (textToSearch) do
                             local folder = pprofolder ++ "clip"
@@ -438,7 +455,7 @@ function handleClipboard(barName)
                         endif
                         keepRun = 1
                         break
-                    case 9
+                    case 10
                         local textToSearch = input("Search with grepWin")
                         if (textToSearch) do
                             local folder = pprofolder ++ "clip"
@@ -446,7 +463,7 @@ function handleClipboard(barName)
                         endif
                         keepRun = 1
                         break
-                    case 10
+                    case 11
                         local textToSearch = input("Search with dnGrep")
                         if (textToSearch) do
                             local folder = pprofolder ++ "clip"
@@ -454,30 +471,11 @@ function handleClipboard(barName)
                         endif
                         keepRun = 1
                         break
-                    case 11
+                    case 12
                         local ret = searchClipTextWithPwsh(baseFolder, baseFolderLen, inputTitle)
                         keepRun = !ret
                         break
-                    case 12
-                        editWithEmacs(result)
-                        break
                     case 13
-                        editWithBowPad(result)
-                        break
-                    case 14
-                        editWithAkelPad(result)
-                        break
-                    case 15
-                        clip.load(result)
-                        do("InsideClipboard.exe")
-                        keepRun = 1
-                        break
-                    case 16
-                        clip.load(result)
-                        do("FreeClipViewer.exe")
-                        keepRun = 1
-                        break
-                    case 17
                         *Clip ClearRecent
                         do("cmd.exe", "/c del /Q " ++ pprofolder ++ "clip\\captured\\*")
                         break
