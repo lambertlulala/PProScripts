@@ -36,8 +36,8 @@ function downloadMP3FromYoutube()
             quit
         endif
 
-        local params = "/c yt-dlp --extract-audio --audio-format mp3 " ++ url ++  " -P " ++ "\"" ++ folder ++ "\""
-        do("cmd.exe", params)
+        local params = "--extract-audio --audio-format mp3 " ++ url ++  " -P " ++ "\"" ++ folder ++ "\""
+        do("yt-dlp.exe", params)
     endif
 endfunction
 
