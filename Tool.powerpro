@@ -379,7 +379,7 @@ function handleClipboard(barName)
         local result = pickstring(candidates, inputTitle, 2)
         if (result) do
             result = baseFolder ++ result ++ ".PowerProClip"
-            local action = pickstring("Preview\rShow text\rCopy\rEdit\rSave as BMP\rExplore\rDelete\rMove\rSearch text\rSearch with grepWin\rSearch with dnGrep\rSearch clip text with Pwsh\rClear recent", inputTitle, 2)
+            local action = pickstring("Preview\rShow text\rCopy\rCopy as text\rEdit\rSave as BMP\rExplore\rDelete\rMove\rSearch text\rSearch with grepWin\rSearch with dnGrep\rSearch clip text with Pwsh\rClear recent", inputTitle, 2)
             if (action) do
                 local keepRun = 0
                 switch (_pickedline_)
@@ -402,6 +402,13 @@ function handleClipboard(barName)
                         clip.load(result)
                         break
                     case 4
+                        local tmpCopyPath = env("TEMP") ++ "\\tmp_copy.txt"
+                        clip.load(result)
+                        clip.tofile(tmpCopyPath, 1, "utf8")
+                        clip.load(tmpCopyPath)
+                        file.deletenorecycle(tmpCopyPath)
+                        break
+                    case 5
                         local currentData = env("TEMP") ++ "\\tmp.PowerProClip"
                         local tmpClipPath = env("TEMP") ++ "\\tmp_edit_clip.txt"
                         clip.save(currentData)
@@ -417,7 +424,7 @@ function handleClipboard(barName)
                         file.deletenorecycle(tmpClipPath)
                         keepRun = 1
                         break
-                    case 5
+                    case 6
                         local pathToSave = inputsaveaspath
                         if (pathToSave) do
                             local currentData = env("TEMP") ++ "\\tmp.PowerProClip"
@@ -428,13 +435,13 @@ function handleClipboard(barName)
                             file.deletenorecycle(currentData)
                         endif
                         break
-                    case 6
+                    case 7
                         do("explorer", "/select,\"" ++ result ++ "\"")
                         break
-                    case 7
+                    case 8
                         file.deletenorecycle(result)
                         break
-                    case 8
+                    case 9
                         local destFolder = inputfolder(baseFolder)
                         if (destFolder) do
                             if (find(destFolder, baseFolder) != -1) do
@@ -446,7 +453,7 @@ function handleClipboard(barName)
                             endif
                         endif
                         break
-                    case 9
+                    case 10
                         local textToSearch = input("Search text")
                         if (textToSearch) do
                             local folder = pprofolder ++ "clip"
@@ -455,7 +462,7 @@ function handleClipboard(barName)
                         endif
                         keepRun = 1
                         break
-                    case 10
+                    case 11
                         local textToSearch = input("Search with grepWin")
                         if (textToSearch) do
                             local folder = pprofolder ++ "clip"
@@ -463,7 +470,7 @@ function handleClipboard(barName)
                         endif
                         keepRun = 1
                         break
-                    case 11
+                    case 12
                         local textToSearch = input("Search with dnGrep")
                         if (textToSearch) do
                             local folder = pprofolder ++ "clip"
@@ -471,11 +478,11 @@ function handleClipboard(barName)
                         endif
                         keepRun = 1
                         break
-                    case 12
+                    case 13
                         local ret = searchClipTextWithPwsh(baseFolder, baseFolderLen, inputTitle)
                         keepRun = !ret
                         break
-                    case 13
+                    case 14
                         *Clip ClearRecent
                         do("cmd.exe", "/c del /Q " ++ pprofolder ++ "clip\\captured\\*")
                         break
