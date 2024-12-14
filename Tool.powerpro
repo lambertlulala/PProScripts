@@ -432,6 +432,13 @@ function deleteClipInDb(clipId)
     file.runwait(3600000, "sqlite3.exe", cmd, "", "hide")
 endfunction
 
+function deleteClipsWithoutTagsInDb()
+    local db = "\"" ++ getDbPath() ++ "\""
+    local sqlStatement = "DELETE FROM Clipboard WHERE ClipTags IS NULL OR ClipTags = '';"
+    local cmd = db ++ " \"" ++ sqlStatement ++ "\""
+    file.runwait(3600000, "sqlite3.exe", cmd, "", "hide")
+endfunction
+
 function searchClipsInDb(text)
     local db = "\"" ++ getDbPath() ++ "\""
     local tmpResultFile = env("TEMP") ++ "\\tmp_clip_db_search_result.txt"
@@ -452,7 +459,7 @@ endfunction
 
 function doActionOnClip(clipId, inputTitle)
     local keepRun = 0
-    local action = pickstring("Preview\rShow text\rCopy\rCopy as text\rEdit\rEdit clip tags\rSave as BMP\rDelete\rSearch text\rClear all clips\rList formats", inputTitle, 2)
+    local action = pickstring("Preview\rShow text\rCopy\rCopy as text\rEdit\rEdit clip tags\rSave as BMP\rDelete\rSearch text\rDelete clips without tags\rClear all clips\rList formats", inputTitle, 2)
     if (action) do
         local pproClipFile = createPProClipFileFromDb(clipId)
         switch (_pickedline_)
@@ -534,9 +541,12 @@ function doActionOnClip(clipId, inputTitle)
                 endif
                 break
             case 10
-                deleteAllClipsInDb()
+                deleteClipsWithoutTagsInDb()
                 break
             case 11
+                deleteAllClipsInDb()
+                break
+            case 12
                 Message Clip format: &(clip.ListFormats())
                 break
         endswitch
