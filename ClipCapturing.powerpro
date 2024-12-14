@@ -12,7 +12,7 @@ else
     endif
 endif
 
-local sqlStatement = "INSERT INTO Clipboard(TextData, BinaryData) VALUES (readfile('" ++ tmpTextFile ++ "'), readfile('" ++ tmpClipFile ++ "'))"
+local sqlStatement = "INSERT INTO Clipboard(TextData, BinaryData) VALUES (readfile('" ++ tmpTextFile ++ "'), readfile('" ++ tmpClipFile ++ "'));"
 local db = pprofolder ++ "pproclip.db"
 local cmd = db ++ " \"" ++ sqlStatement ++ "\""
 file.runwait(3600000, "sqlite3.exe", cmd, "", "hide")
