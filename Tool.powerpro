@@ -439,6 +439,10 @@ function deleteClipsWithoutTagsInDb()
     file.runwait(3600000, "sqlite3.exe", cmd, "", "hide")
 endfunction
 
+function deleteClipDb()
+    file.deletenorecycle(getDbPath())
+endfunction
+
 function searchClipsInDb(text)
     local db = "\"" ++ getDbPath() ++ "\""
     local tmpResultFile = env("TEMP") ++ "\\tmp_clip_db_search_result.txt"
