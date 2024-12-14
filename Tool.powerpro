@@ -484,6 +484,18 @@ function deleteAllClipsInDb()
     file.runwait(3600000, "sqlite3.exe", cmd, "", "hide")
 endfunction
 
+function keepLastClipsInDb(numClipsToKeep, withTags)
+    local db = "\"" ++ getDbPath() ++ "\""
+    local sqlStatement
+    if (withTags == 0) do
+        sqlStatement = "DELETE FROM Clipboard WHERE ClipId NOT IN (SELECT ClipId FROM Clipboard ORDER BY ClipId DESC LIMIT " ++ numClipsToKeep ++ ");"
+    else
+        sqlStatement = "DELETE FROM Clipboard WHERE ClipId NOT IN (SELECT ClipId FROM Clipboard WHERE ClipTags IS NULL OR ClipTags = '' ORDER BY ClipId DESC LIMIT " ++ numClipsToKeep ++ ") AND (ClipTags IS NULL OR ClipTags = '');"
+    endif
+    local cmd = db ++ " \"" ++ sqlStatement ++ "\""
+    file.runwait(3600000, "sqlite3.exe", cmd, "", "hide")
+endfunction
+
 function doActionOnClip(clipId, inputTitle)
     local keepRun = 0
     local action = pickstring("Preview\rShow text\rCopy\rCopy as text\rEdit\rEdit clip tags\rSave as BMP\rDelete\rSearch text\rDelete clips without tags\rClear all clips\rList formats", inputTitle, 2)
