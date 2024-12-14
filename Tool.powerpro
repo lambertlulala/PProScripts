@@ -339,6 +339,29 @@ function navigateToFolder(barName)
     *Keys {to *} ^l{w1}&(folder){enter}
 endfunction
 
+function onCapturingClip()
+    local tmpClipFile = env("TEMP") ++ "\\tmpClip.powerproclip"
+    local tmpTextFile = env("TEMP") ++ "\\tmpTextClip.txt"
+    clip.save(tmpClipFile)
+    if (clip.HasFormat("TEXT") || clip.HasFormat("UNICODETEXT")) do
+        clip.tofile(tmpTextFile, 1, "utf8")
+    else
+        local fp = file.open(tmpTextFile, "w")
+        if (fp) do
+            fp.writestring("(non-text)")
+            fp.close
+        endif
+    endif
+
+    local sqlStatement = "INSERT INTO Clipboard(TextData, BinaryData) VALUES (readfile('" ++ tmpTextFile ++ "'), readfile('" ++ tmpClipFile ++ "'));"
+    local db = pprofolder ++ "pproclip.db"
+    local cmd = db ++ " \"" ++ sqlStatement ++ "\""
+    file.runwait(3600000, "sqlite3.exe", cmd, "", "hide")
+
+    file.deletenorecycle(tmpClipFile)
+    file.deletenorecycle(tmpTextFile)
+endfunction
+
 function createClipboardDbIfNonexistent()
     local sqlStatement = ?+CREATE TABLE IF NOT EXISTS "Clipboard" ("ClipId" INTEGER PRIMARY KEY AUTOINCREMENT, "TextData" TEXT NOT NULL, "BinaryData" BLOB NOT NULL, "CreatedAt" TEXT NOT NULL DEFAULT (DATETIME('now', 'localtime')), "ClipTags" TEXT);+
     local db = "\"" ++ getDbPath() ++ "\""
