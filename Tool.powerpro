@@ -498,7 +498,7 @@ endfunction
 
 function doActionOnClip(clipId, inputTitle)
     local keepRun = 0
-    local action = pickstring("Preview\rShow text\rCopy\rCopy as text\rEdit\rEdit clip tags\rSave as BMP\rDelete\rSearch text\rDelete clips without tags\rClear all clips\rList formats", inputTitle, 2)
+    local action = pickstring("Preview\rShow text\rCopy\rCopy as text\rEdit\rEdit clip tags\rSave as BMP\rDelete\rSearch text\rDelete clips without tags\rClear all clips\rKeep last clips\rList formats", inputTitle, 2)
     if (action) do
         local pproClipFile = createPProClipFileFromDb(clipId)
         switch (_pickedline_)
@@ -586,6 +586,12 @@ function doActionOnClip(clipId, inputTitle)
                 deleteAllClipsInDb()
                 break
             case 12
+                local numClipsToKeep = input("Number of clips to keep")
+                if (numClipsToKeep > 0) do
+                    keepLastClipsInDb(numClipsToKeep, 1)
+                endif
+                break
+            case 13
                 Message Clip format: &(clip.ListFormats())
                 break
         endswitch
