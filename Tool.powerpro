@@ -763,3 +763,40 @@ function handleClipboard(barName)
 
     win.resetfocus(15)
 endfunction
+
+function runStartApps(barName)
+    local inputTitle = "Run apps"
+    local inputHandle = window("visiblewindow", "*" ++ inputTitle ++ "*")
+    if (win.exists(inputHandle)) do
+        local rect = win.getrect(inputHandle)
+        local x = word(rect, 1)
+        local y = word(rect, 2)
+        win.sendmouse("ab", x, y, "lc")
+        quit
+    endif
+
+    if (cl.exists(barName)) do
+        win.setfocus(cl.getBarHandle(barName))
+    endif
+
+    local tmpFile = env("TEMP") ++ "\\tmp_start_apps.txt"
+    local cmd = "-Command \"Get-StartApps | ForEach-Object { \\\"$($_.Name),$($_.AppID)\\\"} | Out-File -FilePath " ++ tmpFile ++ "\""
+    file.runwait(3600000, "pwsh.exe", cmd, "", "hide")
+    local results = file.readall(tmpFile)
+    local apps
+    for each line item in results
+        apps = apps ++ word(item, 1, ",") ++ "\r"
+    endfor
+
+    local appToRun = pickstring(apps, inputTitle, 2)
+    if (appToRun) do
+        local vecApps = vec.createFromLines(results)
+        local idx = _pickedline_ - 1
+        local appId = word(vecApps[idx], 2, ",")
+        local cmdToRun = "shell:AppsFolder\\" ++ appId
+        do("explorer.exe", cmdToRun)
+    endif
+    file.deletenorecycle(tmpFile)
+
+    win.resetfocus(15)
+endfunction
