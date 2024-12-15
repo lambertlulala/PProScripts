@@ -305,9 +305,10 @@ function switchToWindow(barName, width, height)
     setnextdialogpos(x, y, width, height, "topmost")
     local sel = pickstring(windowList, inputTitle, 2)
     if (sel) do
-        local idx = find(sel, "]")
-        if (idx > 0) do
-            local handle = slice(sel, 1, idx - 1)
+        local idxBeg = find(sel, "[")
+        local idxEnd = find(sel, "]")
+        if (idxBeg != -1 && idxEnd != -1 && idxEnd -1 >= idxBeg) do
+            local handle = slice(sel, idxBeg + 1, idxEnd - 1)
             window.show(handle)
         endif
     else
@@ -414,11 +415,12 @@ function handleClipboardInDb(barName)
     win.resetfocus(15)
 endfunction
 
-function getClipId(clip)
+function getClipId(srcClip)
     local clipId = 0
-    local idx = find(clip, "]")
-    if (idx > 0) do
-        clipId = slice(clip, 1, idx - 1)
+    local idxBeg = find(srcClip, "[")
+    local idxEnd = find(srcClip, "]")
+    if (idxBeg != -1 && idxEnd != -1 && idxEnd -1 >= idxBeg) do
+        clipId = slice(srcClip, idxBeg + 1, idxEnd - 1)
     endif
     return(clipId)
 endfunction
