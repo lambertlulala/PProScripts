@@ -340,27 +340,42 @@ function navigateToFolder(barName)
     *Keys {to *} ^l{w1}&(folder){enter}
 endfunction
 
-function onCapturingClip()
-    local tmpClipFile = env("TEMP") ++ "\\tmpClip.powerproclip"
-    local tmpTextFile = env("TEMP") ++ "\\tmpTextClip.txt"
-    clip.save(tmpClipFile)
+function createClipInfoFiles()
+    local clipInfo = class.makestruct("clipDataFile clipTextFile")
+    local basePath = env("TEMP") ++ "\\" ++ Date.now ++ "_" ++ random(86400)
+    clipInfo.clipDataFile =  basePath ++ ".powerproclip"
+    clipInfo.clipTextFile = basePath ++ ".txt"
+
+    clip.save(clipInfo.clipDataFile)
     if (clip.HasFormat("TEXT") || clip.HasFormat("UNICODETEXT")) do
-        clip.tofile(tmpTextFile, 1, "utf8")
+        clip.tofile(clipInfo.clipTextFile, 1, "utf8")
     else
-        local fp = file.open(tmpTextFile, "w")
+        local fp = file.open(clipInfo.clipTextFile, "w")
         if (fp) do
             fp.writestring("(non-text)")
             fp.close
         endif
     endif
 
-    local sqlStatement = "INSERT INTO Clipboard(TextData, BinaryData) VALUES (readfile('" ++ tmpTextFile ++ "'), readfile('" ++ tmpClipFile ++ "'));"
-    local db = pprofolder ++ "pproclip.db"
+    return(clipInfo)
+endfunction
+
+function deleteClipInfoFiles(clipInfo)
+    file.deletenorecycle(clipInfo.clipDataFile)
+    file.deletenorecycle(clipInfo.clipTextFile)
+endfunction
+
+function insertClipIntoDb(clipInfo)
+    local sqlStatement = "INSERT INTO Clipboard(TextData, BinaryData) VALUES (readfile('" ++ clipInfo.clipTextFile ++ "'), readfile('" ++ clipInfo.clipDataFile ++ "'));"
+    local db = getDbPath()
     local cmd = db ++ " \"" ++ sqlStatement ++ "\""
     file.runwait(3600000, "sqlite3.exe", cmd, "", "hide")
+endfunction
 
-    file.deletenorecycle(tmpClipFile)
-    file.deletenorecycle(tmpTextFile)
+function onCapturingClip()
+    local clipInfo = createClipInfoFiles()
+    insertClipIntoDb(clipInfo)
+    deleteClipInfoFiles(clipInfo)
 endfunction
 
 function createClipboardDbIfNonexistent()
