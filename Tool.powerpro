@@ -1,4 +1,10 @@
 
+function _autoinit_()
+    global CLIP_LIST_OPTION_ALL = 0
+    global CLIP_LIST_OPTION_LIMITED = 1
+    global CLIP_DEFAULT_CLIP_DISPLAY_NUMBER = 1000
+endfunction
+
 function copyPproconfTo(dstPath)
     local pproconf = pprofolder ++ "pproconf.pcf"
     if (file.copy(pproconf, dstPath)) do
@@ -434,13 +440,27 @@ function handleClipboardInDb(barName)
         win.setfocus(cl.getBarHandle(barName))
     endif
 
+    local candidates
+    local clipActionInfo
     for (local run = 1; run;)
-        local candidates = listClipsFromDb()
+        if (clipActionInfo) do
+            if (clipActionInfo.listOption == CLIP_LIST_OPTION_ALL) do
+                candidates = listClipsFromDb()
+            elseif (clipActionInfo.isCustom == 1)
+                candidates = clipActionInfo.clips
+            else
+                candidates = listLimitedNumberOfClipsFromDb(CLIP_DEFAULT_CLIP_DISPLAY_NUMBER)
+            endif
+        else
+            candidates = listLimitedNumberOfClipsFromDb(CLIP_DEFAULT_CLIP_DISPLAY_NUMBER)
+        endif
+
         setnextdialogpos(win.vscreenwidth / 2 - 400, win.vscreenheight / 2 - 200, 800, 400, "topmost")
         local clip = pickstring(candidates, inputTitle, 2)
         if (clip) do
             local clipId = getClipId(clip)
-            run = doActionOnClip(clipId, inputTitle)
+            clipActionInfo = doActionOnClip(clipId, inputTitle)
+            run = clipActionInfo.keepRun
         else
             run = 0
         endif
@@ -544,8 +564,12 @@ function keepLastClipsInDb(numClipsToKeep, withTags)
 endfunction
 
 function doActionOnClip(clipId, inputTitle)
+    local clipActionInfo = class.makestruct("keepRun listOption clips isCustom")
+    clipActionInfo.isCustom = 0
+
     local keepRun = 0
-    local action = pickstring("Preview\rShow text\rCopy\rCopy as text\rEdit\rEdit clip tags\rSave as BMP\rDelete\rSearch text\rSearch clips with tags\rList all clips with tags\rDelete clips without tags\rClear all clips\rKeep last clips\rList formats", inputTitle, 2)
+    local listOption = CLIP_LIST_OPTION_LIMITED
+    local action = pickstring("Preview\rShow text\rCopy\rCopy as text\rEdit\rEdit clip tags\rSave as BMP\rDelete\rSearch text\rSearch clips with tags\rList all clips with tags\rList all clips\rDelete clips without tags\rClear all clips\rKeep last clips\rList formats", inputTitle, 2)
     if (action) do
         local pproClipFile = createPProClipFileFromDb(clipId)
         switch (_pickedline_)
@@ -615,56 +639,40 @@ function doActionOnClip(clipId, inputTitle)
                 keepRun = 1
                 local textToSearch = input("Search clip text")
                 if (textToSearch) do
-                    setnextdialogpos(win.vscreenwidth / 2 - 400, win.vscreenheight / 2 - 200, 800, 400, "topmost")
-                    local filteredCandidates = searchClipsInDb(textToSearch)
-                    local pickedClip = pickstring(filteredCandidates, inputTitle, 2)
-                    if (pickedClip) do
-                        local clipId = getClipId(pickedClip)
-                        local pproClipFile = createPProClipFileFromDb(clipId)
-                        clip.load(pproClipFile)
-                        keepRun = 0
-                    endif
+                    clipActionInfo.clips = searchClipsInDb(textToSearch)
+                    clipActionInfo.isCustom = 1
                 endif
                 break
             case 10
                 keepRun = 1
                 local tagsToSearch = input("Search clips with tags")
                 if (tagsToSearch) do
-                    setnextdialogpos(win.vscreenwidth / 2 - 400, win.vscreenheight / 2 - 200, 800, 400, "topmost")
-                    local filteredCandidates = searchClipsWithTagsInDb(tagsToSearch)
-                    local pickedClip = pickstring(filteredCandidates, inputTitle, 2)
-                    if (pickedClip) do
-                        local clipId = getClipId(pickedClip)
-                        local pproClipFile = createPProClipFileFromDb(clipId)
-                        clip.load(pproClipFile)
-                        keepRun = 0
-                    endif
+                    clipActionInfo.clips = searchClipsWithTagsInDb(tagsToSearch)
+                    clipActionInfo.isCustom = 1
                 endif
                 break
             case 11
                 keepRun = 1
-                local filteredCandidates = listAllClipsWithTagsFromDb()
-                local pickedClip = pickstring(filteredCandidates, inputTitle, 2)
-                if (pickedClip) do
-                    local clipId = getClipId(pickedClip)
-                    local pproClipFile = createPProClipFileFromDb(clipId)
-                    clip.load(pproClipFile)
-                    keepRun = 0
-                endif
+                clipActionInfo.clips = listAllClipsWithTagsFromDb()
+                clipActionInfo.isCustom = 1
                 break
             case 12
-                deleteClipsWithoutTagsInDb()
+                keepRun = 1
+                listOption = CLIP_LIST_OPTION_ALL
                 break
             case 13
-                deleteAllClipsInDb()
+                deleteClipsWithoutTagsInDb()
                 break
             case 14
+                deleteAllClipsInDb()
+                break
+            case 15
                 local numClipsToKeep = input("Number of clips to keep")
                 if (numClipsToKeep > 0) do
                     keepLastClipsInDb(numClipsToKeep, 1)
                 endif
                 break
-            case 15
+            case 16
                 Message Clip format: &(clip.ListFormats())
                 break
         endswitch
@@ -673,7 +681,10 @@ function doActionOnClip(clipId, inputTitle)
     else
         keepRun = 1
     endif
-    return(keepRun)
+
+    clipActionInfo.keepRun = keepRun
+    clipActionInfo.listOption = listOption
+    return(clipActionInfo)
 endfunction
 
 function handleClipboard(barName)
