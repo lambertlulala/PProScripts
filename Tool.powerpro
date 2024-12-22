@@ -323,11 +323,7 @@ function navigateToFolder(barName)
     endif
 
     local folder
-    local lastChar = slice(item, -1)
-    if (lastChar == "\\") do
-        item = slice(item, 0, length(item) - 2)
-    endif
-
+    item = trim(item, "\\", 2)
     if (file.isfolder(item)) do
         folder = item
     else
