@@ -494,6 +494,17 @@ function searchClipsInDb(text)
     return(clips)
 endfunction
 
+function searchClipsWithTagsInDb(tags)
+    local db = "\"" ++ getDbPath() ++ "\""
+    local tmpResultFile = env("TEMP") ++ "\\tmp_clip_db_search_result.txt"
+    local outputCmd = "\".output " ++ tmpResultFile ++ "\""
+    local cmd = db ++ " " ++ outputCmd ++ " \"" ++ "SELECT printf('[%d][TAGS: %s] %.256s', ClipId, ClipTags, CASE WHEN instr(TextData, '\n') > 0 THEN replace(replace(TextData, '\n', ' '), '\r', ' ') ELSE TextData END) FROM Clipboard WHERE ClipTags LIKE '%" ++ tags ++ "%';"
+    file.runwait(3600000, "sqlite3.exe", cmd, "", "hide")
+    local clips = file.readall(tmpResultFile)
+    file.deletenorecycle(tmpResultFile)
+    return(clips)
+endfunction
+
 function deleteAllClipsInDb()
     local db = "\"" ++ getDbPath() ++ "\""
     local sqlStatement = "DELETE FROM Clipboard; VACUUM;"
@@ -515,7 +526,7 @@ endfunction
 
 function doActionOnClip(clipId, inputTitle)
     local keepRun = 0
-    local action = pickstring("Preview\rShow text\rCopy\rCopy as text\rEdit\rEdit clip tags\rSave as BMP\rDelete\rSearch text\rDelete clips without tags\rClear all clips\rKeep last clips\rList formats", inputTitle, 2)
+    local action = pickstring("Preview\rShow text\rCopy\rCopy as text\rEdit\rEdit clip tags\rSave as BMP\rDelete\rSearch text\rSearch clips with tags\rDelete clips without tags\rClear all clips\rKeep last clips\rList formats", inputTitle, 2)
     if (action) do
         local pproClipFile = createPProClipFileFromDb(clipId)
         switch (_pickedline_)
@@ -597,18 +608,33 @@ function doActionOnClip(clipId, inputTitle)
                 endif
                 break
             case 10
-                deleteClipsWithoutTagsInDb()
+                keepRun = 1
+                local tagsToSearch = input("Search clips with tags")
+                if (tagsToSearch) do
+                    setnextdialogpos(win.vscreenwidth / 2 - 400, win.vscreenheight / 2 - 200, 800, 400, "topmost")
+                    local filteredCandidates = searchClipsWithTagsInDb(tagsToSearch)
+                    local pickedClip = pickstring(filteredCandidates, inputTitle, 2)
+                    if (pickedClip) do
+                        local clipId = getClipId(pickedClip)
+                        local pproClipFile = createPProClipFileFromDb(clipId)
+                        clip.load(pproClipFile)
+                        keepRun = 0
+                    endif
+                endif
                 break
             case 11
-                deleteAllClipsInDb()
+                deleteClipsWithoutTagsInDb()
                 break
             case 12
+                deleteAllClipsInDb()
+                break
+            case 13
                 local numClipsToKeep = input("Number of clips to keep")
                 if (numClipsToKeep > 0) do
                     keepLastClipsInDb(numClipsToKeep, 1)
                 endif
                 break
-            case 13
+            case 14
                 Message Clip format: &(clip.ListFormats())
                 break
         endswitch
