@@ -1,0 +1,358 @@
+
+function _autoinit_()
+    global CLIP_LIST_OPTION_ALL = 0
+    global CLIP_LIST_OPTION_LIMITED = 1
+    global CLIP_DEFAULT_CLIP_LIMIT_COUNT = 1000
+endfunction
+
+function createClipInfoFiles()
+    local clipInfo = class.makestruct("clipDataFile clipTextFile")
+    local basePath = env("TEMP") ++ "\\" ++ Date.now ++ "_" ++ random(86400)
+    clipInfo.clipDataFile =  basePath ++ ".powerproclip"
+    clipInfo.clipTextFile = basePath ++ ".txt"
+
+    clip.save(clipInfo.clipDataFile)
+    if (clip.HasFormat("TEXT") || clip.HasFormat("UNICODETEXT")) do
+        clip.tofile(clipInfo.clipTextFile, 1, "utf8")
+    else
+        local fp = file.open(clipInfo.clipTextFile, "w")
+        if (fp) do
+            fp.writestring("(non-text)")
+            fp.close
+        endif
+    endif
+
+    return(clipInfo)
+endfunction
+
+function deleteClipInfoFiles(clipInfo)
+    file.deletenorecycle(clipInfo.clipDataFile)
+    file.deletenorecycle(clipInfo.clipTextFile)
+endfunction
+
+function insertClipIntoDb(clipInfo)
+    local sqlStatement = "INSERT INTO Clipboard(TextData, BinaryData) VALUES (readfile('" ++ clipInfo.clipTextFile ++ "'), readfile('" ++ clipInfo.clipDataFile ++ "'));"
+    local db = getDbPath()
+    local cmd = db ++ " \"" ++ sqlStatement ++ "\""
+    file.runwait(3600000, "sqlite3.exe", cmd, "", "hide")
+endfunction
+
+function onCapturingClip()
+    local clipInfo = createClipInfoFiles()
+    insertClipIntoDb(clipInfo)
+    deleteClipInfoFiles(clipInfo)
+endfunction
+
+function createClipboardDbIfNonexistent()
+    local sqlStatement = ?+CREATE TABLE IF NOT EXISTS "Clipboard" ("ClipId" INTEGER PRIMARY KEY AUTOINCREMENT, "TextData" TEXT NOT NULL, "BinaryData" BLOB NOT NULL, "CreatedAt" TEXT NOT NULL DEFAULT (DATETIME('now', 'localtime')), "ClipTags" TEXT);+
+    local db = "\"" ++ getDbPath() ++ "\""
+    local cmd = db ++ " \"" ++ sqlStatement ++ "\""
+    do("sqlite3.exe", cmd)
+endfunction
+
+function listClipsFromDb()
+    local db = "\"" ++ getDbPath() ++ "\""
+    local tmpResultFile = env("TEMP") ++ "\\tmp_clip_db_result.txt"
+    local outputCmd = "\".output " ++ tmpResultFile ++ "\""
+    local cmd = db ++ " " ++ outputCmd ++ " \"" ++ "SELECT printf('[%d][TAGS: %s] %.256s', ClipId, ClipTags, CASE WHEN instr(TextData, '\n') > 0 THEN replace(replace(TextData, '\n', ' '), '\r', ' ') ELSE TextData END) AS FormattedOutput FROM Clipboard ORDER BY ClipId DESC;" ++ "\""
+    file.runwait(3600000, "sqlite3.exe", cmd, "", "hide")
+    local clips = file.readall(tmpResultFile)
+    file.deletenorecycle(tmpResultFile)
+    return(clips)
+endfunction
+
+function listLimitedNumberOfClipsFromDb(limitedCount)
+    local db = "\"" ++ getDbPath() ++ "\""
+    local tmpResultFile = env("TEMP") ++ "\\tmp_clip_db_result.txt"
+    local outputCmd = "\".output " ++ tmpResultFile ++ "\""
+    local cmd
+    cmd = db ++ " " ++ outputCmd ++ " \"" ++ "SELECT printf('[%d][TAGS: %s] %.256s', ClipId, ClipTags, CASE WHEN instr(TextData, '\n') > 0 THEN replace(replace(TextData, '\n', ' '), '\r', ' ') ELSE TextData END) AS FormattedOutput FROM Clipboard ORDER BY ClipId DESC LIMIT " ++ limitedCount ++ ";\""
+    file.runwait(3600000, "sqlite3.exe", cmd, "", "hide")
+    local clips = file.readall(tmpResultFile)
+    file.deletenorecycle(tmpResultFile)
+    return(clips)
+endfunction
+
+function listAllClipsWithTagsFromDb()
+    local db = "\"" ++ getDbPath() ++ "\""
+    local tmpResultFile = env("TEMP") ++ "\\tmp_clip_db_result.txt"
+    local outputCmd = "\".output " ++ tmpResultFile ++ "\""
+    local cmd = db ++ " " ++ outputCmd ++ " \"" ++ "SELECT printf('[%d][TAGS: %s] %.256s', ClipId, ClipTags, CASE WHEN instr(TextData, '\n') > 0 THEN replace(replace(TextData, '\n', ' '), '\r', ' ') ELSE TextData END) AS FormattedOutput FROM Clipboard WHERE ClipTags IS NOT NULL AND ClipTags != '' ORDER BY ClipId DESC;" ++ "\""
+    file.runwait(3600000, "sqlite3.exe", cmd, "", "hide")
+    local clips = file.readall(tmpResultFile)
+    file.deletenorecycle(tmpResultFile)
+    return(clips)
+endfunction
+
+function getDbPath()
+    return(pprofolder ++ "pproclip.db")
+endfunction
+
+function handleClipboardInDb(barName, clipLimitCount)
+    local inputTitle = "Select clipboard item"
+    local inputHandle = window("visiblewindow", "*" ++ inputTitle ++ "*")
+    if (win.exists(inputHandle)) do
+        local rect = win.getrect(inputHandle)
+        local x = word(rect, 1)
+        local y = word(rect, 2)
+        win.sendmouse("ab", x, y, "lc")
+        quit
+    endif
+
+    if (cl.exists(barName)) do
+        win.setfocus(cl.getBarHandle(barName))
+    endif
+
+    local candidates
+    local clipActionInfo
+    local clipCount
+    if (!clipLimitCount || 0 == clipLimitCount) do
+        clipCount = CLIP_DEFAULT_CLIP_LIMIT_COUNT
+    else
+        clipCount = clipLimitCount
+    endif
+
+    for (local run = 1; run;)
+        if (clipActionInfo) do
+            if (clipActionInfo.listOption == CLIP_LIST_OPTION_ALL) do
+                candidates = listClipsFromDb()
+            elseif (clipActionInfo.isCustom == 1)
+                candidates = clipActionInfo.clips
+            else
+                candidates = listLimitedNumberOfClipsFromDb(clipCount)
+            endif
+        else
+            candidates = listLimitedNumberOfClipsFromDb(clipCount)
+        endif
+
+        setnextdialogpos(win.vscreenwidth / 2 - 400, win.vscreenheight / 2 - 200, 800, 400, "topmost")
+        local clip = pickstring(candidates, inputTitle, 2)
+        if (clip) do
+            local clipId = getClipId(clip)
+            clipActionInfo = doActionOnClip(clipId, inputTitle)
+            run = clipActionInfo.keepRun
+        else
+            run = 0
+        endif
+    endfor
+
+    win.resetfocus(15)
+endfunction
+
+function getClipId(srcClip)
+    local clipId = 0
+    local idxBeg = find(srcClip, "[")
+    local idxEnd = find(srcClip, "]")
+    if (idxBeg != -1 && idxEnd != -1 && idxEnd -1 >= idxBeg) do
+        clipId = slice(srcClip, idxBeg + 1, idxEnd - 1)
+    endif
+    return(clipId)
+endfunction
+
+function createPProClipFileFromDb(clipId)
+    local db = "\"" ++ getDbPath() ++ "\""
+    local pproclipFile = env("TEMP") ++ "\\tmp_clip_from_db.powerproclip"
+    local sqlStatement = "SELECT writefile('"++ pproclipFile  ++ "', BinaryData) FROM Clipboard WHERE ClipId = " ++ clipId ++ " ;"
+    local cmd = db ++ " \"" ++ sqlStatement ++ "\""
+    file.runwait(3600000, "sqlite3.exe", cmd, "", "hide")
+    return(pproclipFile)
+endfunction
+
+function updateClipInDb(clipId, utf8TextFile, pproClipFile)
+    local db = "\"" ++ getDbPath() ++ "\""
+    local pproclipFile = env("TEMP") ++ "\\tmp_clip_from_db.powerproclip"
+    local sqlStatement = "UPDATE Clipboard SET TextData = readfile('" ++ utf8TextFile ++ "'), BinaryData = readfile('" ++ pproClipFile ++ "') WHERE ClipId = " ++ clipId ++ " ;"
+    local cmd = db ++ " \"" ++ sqlStatement ++ "\""
+    file.runwait(3600000, "sqlite3.exe", cmd, "", "hide")
+endfunction
+
+function updateClipTagInDb(clipId, clipTags)
+    local db = "\"" ++ getDbPath() ++ "\""
+    local pproclipFile = env("TEMP") ++ "\\tmp_clip_from_db.powerproclip"
+    local sqlStatement = "UPDATE Clipboard SET ClipTags = '" ++ clipTags ++ "' WHERE ClipId = " ++ clipId ++ " ;"
+    local cmd = db ++ " \"" ++ sqlStatement ++ "\""
+    file.runwait(3600000, "sqlite3.exe", cmd, "", "hide")
+endfunction
+
+function deleteClipInDb(clipId)
+    local db = "\"" ++ getDbPath() ++ "\""
+    local sqlStatement = "DELETE FROM Clipboard WHERE ClipId = " ++ clipId ++ ";"
+    local cmd = db ++ " \"" ++ sqlStatement ++ "\""
+    file.runwait(3600000, "sqlite3.exe", cmd, "", "hide")
+endfunction
+
+function deleteClipsWithoutTagsInDb()
+    local db = "\"" ++ getDbPath() ++ "\""
+    local sqlStatement = "DELETE FROM Clipboard WHERE ClipTags IS NULL OR ClipTags = '';"
+    local cmd = db ++ " \"" ++ sqlStatement ++ "\""
+    file.runwait(3600000, "sqlite3.exe", cmd, "", "hide")
+endfunction
+
+function deleteClipDb()
+    file.deletenorecycle(getDbPath())
+endfunction
+
+function searchClipsInDb(text)
+    local db = "\"" ++ getDbPath() ++ "\""
+    local tmpResultFile = env("TEMP") ++ "\\tmp_clip_db_search_result.txt"
+    local outputCmd = "\".output " ++ tmpResultFile ++ "\""
+    local cmd = db ++ " " ++ outputCmd ++ " \"" ++ "SELECT printf('[%d][TAGS: %s] %.256s', ClipId, ClipTags, CASE WHEN instr(TextData, '\n') > 0 THEN replace(replace(TextData, '\n', ' '), '\r', ' ') ELSE TextData END) FROM Clipboard WHERE TextData LIKE '%" ++ text ++ "%';"
+    file.runwait(3600000, "sqlite3.exe", cmd, "", "hide")
+    local clips = file.readall(tmpResultFile)
+    file.deletenorecycle(tmpResultFile)
+    return(clips)
+endfunction
+
+function searchClipsWithTagsInDb(tags)
+    local db = "\"" ++ getDbPath() ++ "\""
+    local tmpResultFile = env("TEMP") ++ "\\tmp_clip_db_search_result.txt"
+    local outputCmd = "\".output " ++ tmpResultFile ++ "\""
+    local cmd = db ++ " " ++ outputCmd ++ " \"" ++ "SELECT printf('[%d][TAGS: %s] %.256s', ClipId, ClipTags, CASE WHEN instr(TextData, '\n') > 0 THEN replace(replace(TextData, '\n', ' '), '\r', ' ') ELSE TextData END) FROM Clipboard WHERE ClipTags LIKE '%" ++ tags ++ "%';"
+    file.runwait(3600000, "sqlite3.exe", cmd, "", "hide")
+    local clips = file.readall(tmpResultFile)
+    file.deletenorecycle(tmpResultFile)
+    return(clips)
+endfunction
+
+function deleteAllClipsInDb()
+    local db = "\"" ++ getDbPath() ++ "\""
+    local sqlStatement = "DELETE FROM Clipboard; VACUUM;"
+    local cmd = db ++ " \"" ++ sqlStatement ++ "\""
+    file.runwait(3600000, "sqlite3.exe", cmd, "", "hide")
+endfunction
+
+function keepLastClipsInDb(numClipsToKeep, withTags)
+    local db = "\"" ++ getDbPath() ++ "\""
+    local sqlStatement
+    if (withTags == 0) do
+        sqlStatement = "DELETE FROM Clipboard WHERE ClipId NOT IN (SELECT ClipId FROM Clipboard ORDER BY ClipId DESC LIMIT " ++ numClipsToKeep ++ ");"
+    else
+        sqlStatement = "DELETE FROM Clipboard WHERE ClipId NOT IN (SELECT ClipId FROM Clipboard WHERE ClipTags IS NULL OR ClipTags = '' ORDER BY ClipId DESC LIMIT " ++ numClipsToKeep ++ ") AND (ClipTags IS NULL OR ClipTags = '');"
+    endif
+    local cmd = db ++ " \"" ++ sqlStatement ++ "\""
+    file.runwait(3600000, "sqlite3.exe", cmd, "", "hide")
+endfunction
+
+function doActionOnClip(clipId, inputTitle)
+    local clipActionInfo = class.makestruct("keepRun listOption clips isCustom")
+    clipActionInfo.isCustom = 0
+
+    local keepRun = 0
+    local listOption = CLIP_LIST_OPTION_LIMITED
+    local action = pickstring("Preview\rShow text\rCopy\rCopy as text\rEdit\rEdit clip tags\rSave as BMP\rDelete\rSearch text\rSearch clips with tags\rList all clips with tags\rList all clips\rDelete clips without tags\rClear all clips\rKeep last clips\rList formats", inputTitle, 2)
+    if (action) do
+        local pproClipFile = createPProClipFileFromDb(clipId)
+        switch (_pickedline_)
+            case 1
+                win.mouseto(win.vscreenwidth / 2, win.vscreenheight / 2)
+                menu.folder(pproClipFile ++ ".*", "center")
+                keepRun = 1
+                break
+            case 2
+                local currentData = env("TEMP") ++ "\\tmp.PowerProClip"
+                local tmpNotePath = env("TEMP") ++ "\\tmp_show.txt"
+                clip.save(currentData)
+                clip.load(pproClipFile)
+                clip.tofile(tmpNotePath, 1, "utf8")
+                clip.load(currentData)
+                file.deletenorecycle(currentData)
+                note.open(tmpNotePath, "", 2)
+                break
+            case 3
+                clip.load(pproClipFile)
+                break
+            case 4
+                local tmpCopyPath = env("TEMP") ++ "\\tmp_copy.txt"
+                clip.load(pproClipFile)
+                clip.tofile(tmpCopyPath, 1, "utf8")
+                clip.load(tmpCopyPath)
+                file.deletenorecycle(tmpCopyPath)
+                break
+            case 5
+                local currentData = env("TEMP") ++ "\\tmp.PowerProClip"
+                local tmpClipPath = env("TEMP") ++ "\\tmp_edit_clip.txt"
+                clip.save(currentData)
+                clip.load(pproClipFile)
+                clip.tofile(tmpClipPath, 1, "utf8")
+
+                file.runwait(3600000, "notepad.exe", tmpClipPath)
+                clip.load(tmpClipPath)
+                clip.save(pproClipFile)
+                updateClipInDb(clipId, tmpClipPath, pproClipFile)
+
+                clip.load(currentData)
+                file.deletenorecycle(currentData)
+                file.deletenorecycle(tmpClipPath)
+                keepRun = 1
+                break
+            case 6
+                local clipTags = input("Edit clip tags")
+                if (clipTags) do
+                    updateClipTagInDb(clipId, clipTags)
+                endif
+                break
+            case 7
+                local pathToSave = inputsaveaspath
+                if (pathToSave) do
+                    local currentData = env("TEMP") ++ "\\tmp.PowerProClip"
+                    clip.save(currentData)
+                    clip.load(pproClipFile)
+                    clip.bmptofile(pathToSave)
+                    clip.load(currentData)
+                    file.deletenorecycle(currentData)
+                endif
+                break
+            case 8
+                deleteClipInDb(clipId)
+                break
+            case 9
+                keepRun = 1
+                local textToSearch = input("Search clip text")
+                if (textToSearch) do
+                    clipActionInfo.clips = searchClipsInDb(textToSearch)
+                    clipActionInfo.isCustom = 1
+                endif
+                break
+            case 10
+                keepRun = 1
+                local tagsToSearch = input("Search clips with tags")
+                if (tagsToSearch) do
+                    clipActionInfo.clips = searchClipsWithTagsInDb(tagsToSearch)
+                    clipActionInfo.isCustom = 1
+                endif
+                break
+            case 11
+                keepRun = 1
+                clipActionInfo.clips = listAllClipsWithTagsFromDb()
+                clipActionInfo.isCustom = 1
+                break
+            case 12
+                keepRun = 1
+                listOption = CLIP_LIST_OPTION_ALL
+                break
+            case 13
+                deleteClipsWithoutTagsInDb()
+                break
+            case 14
+                deleteAllClipsInDb()
+                break
+            case 15
+                local numClipsToKeep = input("Number of clips to keep")
+                if (numClipsToKeep > 0) do
+                    keepLastClipsInDb(numClipsToKeep, 1)
+                endif
+                break
+            case 16
+                Message Clip format: &(clip.ListFormats())
+                break
+        endswitch
+
+        file.deletenorecycle(pproClipFile)
+    else
+        keepRun = 1
+    endif
+
+    clipActionInfo.keepRun = keepRun
+    clipActionInfo.listOption = listOption
+    return(clipActionInfo)
+endfunction
