@@ -196,7 +196,7 @@ function searchClipsInDb(text)
     local db = "\"" ++ getDbPath() ++ "\""
     local tmpResultFile = env("TEMP") ++ "\\tmp_clip_db_search_result.txt"
     local outputCmd = "\".output " ++ tmpResultFile ++ "\""
-    local cmd = db ++ " " ++ outputCmd ++ " \"" ++ "SELECT printf('[%d][TAGS: %s] %.256s', ClipId, ClipTags, CASE WHEN instr(TextData, '\n') > 0 THEN replace(replace(TextData, '\n', ' '), '\r', ' ') ELSE TextData END) FROM Clipboard WHERE TextData LIKE '%" ++ text ++ "%';"
+    local cmd = db ++ " " ++ outputCmd ++ " \"" ++ "SELECT printf('[%d][TAGS: %s] %.256s', ClipId, ClipTags, CASE WHEN instr(TextData, '\n') > 0 THEN replace(replace(TextData, '\n', ' '), '\r', ' ') ELSE TextData END) FROM Clipboard WHERE TextData LIKE '%" ++ text ++ "%' ORDER BY ClipId DESC;"
     file.runwait(3600000, "sqlite3.exe", cmd, "", "hide")
     local clips = file.readall(tmpResultFile)
     file.deletenorecycle(tmpResultFile)
