@@ -531,3 +531,20 @@ function runStartApps(barName)
 
     win.resetfocus(15)
 endfunction
+
+function playYoutube()
+    local url = input("Youtube URL to play")
+    if (!url) do
+        quit
+    endif
+
+    playYoutubeVideoWithMpv(url)
+endfunction
+
+function playYoutubeFromClipboard()
+    playYoutubeVideoWithMpv(clip.get)
+endfunction
+
+function playYoutubeVideoWithMpv(url)
+    do("mpv", "--script-opts=ytdl_hook-ytdl_path=yt-dlp.exe " ++ url)
+endfunction
