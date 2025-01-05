@@ -548,3 +548,12 @@ endfunction
 function playYoutubeVideoWithMpv(url)
     do("mpv", "--script-opts=ytdl_hook-ytdl_path=yt-dlp.exe " ++ url)
 endfunction
+
+function waitAndSwitchToWindow(exename)
+    local pattern = "=" ++ exename
+    wait.for(window("visiblewindow", pattern))
+    local windowHandle = window("visiblewindow", pattern)
+    if (windowHandle) do
+        window.show(windowHandle)
+    endif
+endfunction
