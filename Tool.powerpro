@@ -1,4 +1,9 @@
 
+function _autoinit_()
+    global WINDOWS_EMACS_CLIENT_PATH
+    global WINDOWS_RUNEMACS_PATH
+endfunction
+
 function copyPproconfTo(dstPath)
     local pproconf = pprofolder ++ "pproconf.pcf"
     if (file.copy(pproconf, dstPath)) do
@@ -96,6 +101,14 @@ endfunction
 function editWithEmacsDaemon(path)
     local cvtPath = convertToLinuxPath(path)
     do("wt.exe", "new-tab wsl emacsclient -nw -a '' \"" ++ cvtPath ++ "\"")
+endfunction
+
+function editWithWindowsEmacs(path)
+    do(WINDOWS_RUNEMACS_PATH, "\"" ++ path ++ "\"")
+endfunction
+
+function editWithWindowsEmacsDaemon(path)
+    do(WINDOWS_EMACS_CLIENT_PATH, ?+-na "" + ++ "\"" ++ path ++ "\"")
 endfunction
 
 function editWithBowPad(path)
@@ -260,6 +273,35 @@ function searchAndEditWithAkelPad(barName)
     local fileToEdit = searchAndPickResult(barName)
     if (fileToEdit) do
         editWithAkelPad(fileToEdit)
+    endif
+endfunction
+
+function searchAndEditWith(barName)
+    local fileToEdit = searchAndPickResult(barName)
+    if (fileToEdit) do
+        local action = pickstring("Emacs(Windows)\rEmacs Daemon(Windows)\rEmacs\rEmacs Daemon\rAkelPad\rBowPad\r", "Edit with", 2)
+        if (action) do
+            switch (_pickedline_)
+                case 1
+                    editWithWindowsEmacs(fileToEdit)
+                    break
+                case 2
+                    editWithWindowsEmacsDaemon(fileToEdit)
+                    break
+                case 3
+                    editWithEmacs(fileToEdit)
+                    break
+                case 4
+                    editWithEmacsDaemon(fileToEdit)
+                    break
+                case 5
+                    editWithAkelPad(fileToEdit)
+                    break
+                case 6
+                    editWithBowPad(fileToEdit)
+                    break
+            endswitch
+        endif
     endif
 endfunction
 
