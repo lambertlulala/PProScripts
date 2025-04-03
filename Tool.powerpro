@@ -29,11 +29,14 @@ function openWithTig()
     endif
 endfunction
 
-function openWithMinttyTig()
+function openWithMinttyTig(path)
+    do(?+C:\Program Files\Git\usr\bin\mintty.exe+, "--tabbar --dir " ++ "\"" ++ path ++ "\"" ++ " -e 'tig'")
+endfunction
+
+function pickDirAndOpenWithMinttyTig()
     local path = inputfolder
     if (path) do
-        path = path.replacechars("\\", "/")
-        do(?+C:\Program Files\Git\usr\bin\mintty.exe+, "--tabbar --dir " ++ "\"" ++ path ++ "\"" ++ " -e 'tig'")
+        openWithMinttyTig(path)
     endif
 endfunction
 
