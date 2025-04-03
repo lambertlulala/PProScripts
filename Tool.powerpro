@@ -40,6 +40,14 @@ function pickDirAndOpenWithMinttyTig()
     endif
 endfunction
 
+function openWithMinttyTigFromRepoListFile(listFile)
+    local result = file.readall(listFile)
+    if (result) do
+        local repo = pickstring(result, "Open in Mintty tig", 2)
+        openWithMinttyTig(repo)
+    endif
+endfunction
+
 function copyNewGUID()
     do("pwsh.exe", "-Command [guid]::NewGuid().toString() | clip")
 endfunction
