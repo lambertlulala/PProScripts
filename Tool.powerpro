@@ -29,6 +29,14 @@ function openWithTig()
     endif
 endfunction
 
+function openWithMinttyTig()
+    local path = inputfolder
+    if (path) do
+        path = path.replacechars("\\", "/")
+        do(?+C:\Program Files\Git\usr\bin\mintty.exe+, "--tabbar --dir " ++ "\"" ++ path ++ "\"" ++ " -e 'tig'")
+    endif
+endfunction
+
 function copyNewGUID()
     do("pwsh.exe", "-Command [guid]::NewGuid().toString() | clip")
 endfunction
