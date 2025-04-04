@@ -29,29 +29,35 @@ function openWithTig()
     endif
 endfunction
 
-function openWithMinttyTig(path)
-    do(?+C:\Program Files\Git\usr\bin\mintty.exe+, "--tabbar --dir " ++ "\"" ++ path ++ "\"" ++ " -e 'tig'")
+function openWithMinttyTig(path, class, title)
+    do(?+C:\Program Files\Git\usr\bin\mintty.exe+, "--class \"" ++ class ++ "\"" ++ " --title \"" ++ title ++ "\"" ++ " --tabbar --dir " ++ "\"" ++ path ++ "\"" ++ " -e 'tig'")
 endfunction
 
 function pickDirAndOpenWithMinttyTig()
     local path = inputfolder
     if (path) do
-        openWithMinttyTig(path)
+        openWithMinttyTig(path, "PPro_tig", path)
     endif
 endfunction
 
-function openWithMinttyTigFromRepoListFile(listFile)
+function openWithMinttyTigFromRepoListFile(listFile, all)
     local result = file.readall(listFile)
     if (result) do
-        local repo = pickstring(result, "Open in Mintty tig", 2)
-        openWithMinttyTig(repo)
+        if (all == 1) do
+            for each line repo in result
+                openWithMinttyTig(repo, "PPro_tig", repo)
+            endfor
+        else
+            local repo = pickstring(result, "Open in Mintty tig", 2)
+            openWithMinttyTig(repo, "PPro_tig", repo)
+        endif
     endif
 endfunction
 
-function pickRepoListFileAndOpenWithMintty()
+function pickRepoListFileAndOpenWithMintty(all)
     local listFile = inputpath
     if (listFile) do
-        openWithMinttyTigFromRepoListFile(listFile)
+        openWithMinttyTigFromRepoListFile(listFile, all)
     endif
 endfunction
 
