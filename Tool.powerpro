@@ -46,6 +46,7 @@ function openWithMinttyTigFromRepoListFile(listFile, all)
         if (all == 1) do
             for each line repo in result
                 openWithMinttyTig(repo, "PPro_tig", repo)
+                wait.for(200)
             endfor
         else
             local repo = pickstring(result, "Open in Mintty tig", 2)
