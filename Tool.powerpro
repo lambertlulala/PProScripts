@@ -48,6 +48,13 @@ function openWithMinttyTigFromRepoListFile(listFile)
     endif
 endfunction
 
+function pickRepoListFileAndOpenWithMintty()
+    local listFile = inputpath
+    if (listFile) do
+        openWithMinttyTigFromRepoListFile(listFile)
+    endif
+endfunction
+
 function copyNewGUID()
     do("pwsh.exe", "-Command [guid]::NewGuid().toString() | clip")
 endfunction
