@@ -30,7 +30,7 @@ function openWithTig()
 endfunction
 
 function openWithMinttyTig(path, class, title)
-    do(?+C:\Program Files\Git\usr\bin\mintty.exe+, "--class \"" ++ class ++ "\"" ++ " --title \"" ++ title ++ "\"" ++ " --tabbar --dir " ++ "\"" ++ path ++ "\"" ++ " -e 'tig'")
+    do(?+C:\Program Files\Git\usr\bin\mintty.exe+, "--class \"" ++ class ++ "\"" ++ " --title \"" ++ title ++ "\"" ++ " --tabbar --dir " ++ "\"" ++ path ++ "\" winpty.exe -- " ++ " tig")
 endfunction
 
 function pickDirAndOpenWithMinttyTig()
