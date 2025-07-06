@@ -632,3 +632,13 @@ function waitAndSwitchToWindow(exename)
         window.show(windowHandle)
     endif
 endfunction
+
+function captureToDoList(toDoListPath, taskListPath)
+    local title
+    local comment
+    Inputdialog("title=Title, comment=Comment","ToDoList Capture")
+    if (title != "") do
+        local params = "-f " ++ "\"" ++ taskListPath ++ "\" " ++ "-nt " ++ "\"" ++ title ++ "\"" ++ " -cm " ++ "\"" ++ comment ++ "\"" ++ " -cmd 32816"
+        do(toDoListPath, params)
+    endif
+endfunction
