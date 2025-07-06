@@ -636,9 +636,11 @@ endfunction
 function captureToDoList(toDoListPath, taskListPath)
     local title
     local comment
-    Inputdialog("title=Title, comment=Comment","ToDoList Capture")
+    local startDate
+    local endDate
+    Inputdialog("title=Title, comment=Comment, startDate=Start date, endDate= End date","ToDoList Capture")
     if (title != "") do
-        local params = "-f " ++ "\"" ++ taskListPath ++ "\" " ++ "-nt " ++ "\"" ++ title ++ "\"" ++ " -cm " ++ "\"" ++ comment ++ "\"" ++ " -cmd 32816"
+        local params = "-f " ++ "\"" ++ taskListPath ++ "\" " ++ "-nt " ++ "\"" ++ title ++ "\"" ++ " -cm " ++ "\"" ++ comment ++ "\"" ++ " -cmd 32816" ++ " -sd " ++ "\"" ++ startDate ++ "\"" ++ " -dd " ++ "\"" ++ endDate ++ "\""
         do(toDoListPath, params)
     endif
 endfunction
