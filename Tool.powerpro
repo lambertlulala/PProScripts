@@ -646,7 +646,10 @@ function captureToDoList(toDoListPath, taskListPath)
 endfunction
 
 function executeTortoiseGitCommand(command, path)
-    local params = "/command:" ++ command ++ " /path:\"" ++ path ++ "\""
+    local params = "/command:" ++ command
+    if (path) do
+        params = params ++ " /path:\"" ++ path ++ "\""
+    endif
     do(?+C:\Program Files\TortoiseGit\bin\TortoiseGitProc.exe+, params)
 endfunction
 
@@ -661,7 +664,7 @@ function editPathAndExecuteTortoiseGitCommand(defaultCommand)
     local path
     local command = defaultCommand
     Inputdialog("path=Path, command=Command","Execute TortoiseGit command")
-    if (path && command) do
+    if (command) do
         executeTortoiseGitCommand(command, path)
     endif
 endfunction
