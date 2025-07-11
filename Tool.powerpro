@@ -663,8 +663,8 @@ endfunction
 function editPathAndExecuteTortoiseGitCommand(defaultCommand)
     local path
     local command = defaultCommand
-    Inputdialog("path=Path, command=Command","Execute TortoiseGit command")
-    if (command) do
+    local result = Inputdialog("path=Path, command=Command","Execute TortoiseGit command")
+    if (result && command) do
         executeTortoiseGitCommand(command, path)
     endif
 endfunction
