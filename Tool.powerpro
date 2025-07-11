@@ -66,19 +66,6 @@ function copyNewGUID()
     do("pwsh.exe", "-Command [guid]::NewGuid().toString() | clip")
 endfunction
 
-function downloadMP3FromYoutube()
-    local folder = inputfolder
-    if (folder) do
-        local url = input("Youtube URL to download")
-        if (!url) do
-            quit
-        endif
-
-        local params = "--extract-audio --audio-format mp3 " ++ url ++  " -P " ++ "\"" ++ folder ++ "\""
-        do("yt-dlp.exe", params)
-    endif
-endfunction
-
 function showOrgAgenda(barName)
     if (cl.exists(barName)) do
         local hBar = cl.getBarHandle(barName)
@@ -605,23 +592,6 @@ function runStartApps(barName)
     file.deletenorecycle(tmpFile)
 
     win.resetfocus(15)
-endfunction
-
-function playYoutube()
-    local url = input("Youtube URL to play")
-    if (!url) do
-        quit
-    endif
-
-    playYoutubeVideoWithMpv(url)
-endfunction
-
-function playYoutubeFromClipboard()
-    playYoutubeVideoWithMpv(clip.get)
-endfunction
-
-function playYoutubeVideoWithMpv(url)
-    do("mpv", "--script-opts=ytdl_hook-ytdl_path=yt-dlp.exe " ++ url)
 endfunction
 
 function waitAndSwitchToWindow(exename)
