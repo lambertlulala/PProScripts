@@ -603,7 +603,7 @@ function waitAndSwitchToWindow(exename)
     endif
 endfunction
 
-function captureToDoList(toDoListPath, taskListPath)
+function captureToDoList(toDoListPath, taskListPath, minimizeAfterCapture, waitTime)
     local title
     local comment
     local startDate
@@ -612,6 +612,18 @@ function captureToDoList(toDoListPath, taskListPath)
     if (title != "") do
         local params = "-f " ++ "\"" ++ taskListPath ++ "\" " ++ "-nt " ++ "\"" ++ title ++ "\"" ++ " -cm " ++ "\"" ++ comment ++ "\"" ++ " -cmd 32816" ++ " -sd " ++ "\"" ++ startDate ++ "\"" ++ " -dd " ++ "\"" ++ endDate ++ "\""
         do(toDoListPath, params)
+    endif
+
+    if (minimizeAfterCapture) do
+        if (waitTime) do
+            wait.forinterval(waitTime)
+        else
+            wait.for(1500)
+        endif
+
+        if (!win.minned("=ToDoList")) do
+            win.minimize("=ToDoList")
+        endif
     endif
 endfunction
 
