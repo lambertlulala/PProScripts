@@ -638,3 +638,13 @@ function editPathAndExecuteTortoiseGitCommand(defaultCommand, defaultPath)
         executeTortoiseGitCommand(command, path)
     endif
 endfunction
+
+function pickRepositoryAndExecuteToretoiseGitCommand(repositoryListFile, defaultCommand)
+    local repoPaths = file.readall(repositoryListFile)
+    if (repoPaths) do
+        local path = pickstring(repoPaths, "Pick a repository", 2)
+        if (path) do
+            editPathAndExecuteTortoiseGitCommand(defaultCommand, path)
+        endif
+    endif
+endfunction
