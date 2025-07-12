@@ -631,9 +631,9 @@ function selectPathAndExecuteTortoiseGitCommand(command)
 endfunction
 
 function editPathAndExecuteTortoiseGitCommand(defaultCommand)
-    local path
     local command = defaultCommand
-    local result = Inputdialog("path=Path, command=Command??log|repostatus|refbrowse|sync|settings","Execute TortoiseGit command")
+    local path
+    local result = Inputdialog("command=Command??log|repostatus|refbrowse|sync|settings, path=Path","Execute TortoiseGit command")
     if (result && command) do
         executeTortoiseGitCommand(command, path)
     endif
