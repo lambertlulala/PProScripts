@@ -603,14 +603,29 @@ function waitAndSwitchToWindow(exename)
     endif
 endfunction
 
-function captureToDoList(toDoListPath, taskListPath, minimizeAfterCapture, waitTime)
+function captureToDoList(toDoListPath, taskListPath, minimizeAfterCapture, waitTime, additionalCmds)
     local title
     local comment
     local startDate
     local endDate
     Inputdialog("title=Title, comment=Comment, startDate=Start date, endDate= End date","ToDoList Capture")
     if (title != "") do
-        local params = "-f " ++ "\"" ++ taskListPath ++ "\" " ++ "-nt " ++ "\"" ++ title ++ "\"" ++ " -cm " ++ "\"" ++ comment ++ "\"" ++ " -cmd 32816" ++ " -sd " ++ "\"" ++ startDate ++ "\"" ++ " -dd " ++ "\"" ++ endDate ++ "\""
+        local params = "-f " ++ "\"" ++ taskListPath ++ "\" " ++ "-nt " ++ "\"" ++ title ++ "\""
+        if (comment) do
+            params = params ++ " -cm " ++ "\"" ++ comment ++ "\""
+        endif
+
+        if (startDate) do
+            params = params ++ " -sd " ++ "\"" ++ startDate ++ "\""
+        endif
+
+        if (endDate) do
+            params = params ++ " -dd " ++ "\"" ++ endDate ++ "\""
+        endif
+
+        if (additionalCmds) do
+            params = params ++ " " ++ additionalCmds
+        endif
         do(toDoListPath, params)
     endif
 
