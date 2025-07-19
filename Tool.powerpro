@@ -677,3 +677,15 @@ function pickRepositoryAndExecuteToretoiseGitCommand(repositoryListFile, default
         endif
     endif
 endfunction
+
+function insertDateTime()
+    local oriDateTime = inputdatetime
+    if (oriDateTime != "20010101010101") do
+        local oriDate = slice(oriDateTime, 8)
+        local newDate = formatdate("yyyy-MM-dd", oriDate)
+        local oriTime = slice(oriDateTime, 8, 13)
+        local newTime = formattime("HH:mm:ss", oriTime)
+        local newDateTime = newDate ++ " " ++ newTime
+        *Keys {to *}&(newDateTime)
+    endif
+endfunction
