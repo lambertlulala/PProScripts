@@ -639,6 +639,8 @@ function captureToDoList(toDoListPath, taskListPath, minimizeAfterCapture, waitT
         if (!win.minned("=ToDoList")) do
             win.minimize("=ToDoList")
         endif
+    else
+        window.show("=ToDoList")
     endif
 endfunction
 
