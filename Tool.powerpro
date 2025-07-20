@@ -640,7 +640,10 @@ function captureToDoList(toDoListPath, taskListPath, minimizeAfterCapture, waitT
             win.minimize("=ToDoList")
         endif
     else
-        window.show("=ToDoList")
+        local windowHandle = window("visiblewindow", "=ToDoList")
+        if (windowHandle) do
+            window.show("=ToDoList")
+        endif
     endif
 endfunction
 
