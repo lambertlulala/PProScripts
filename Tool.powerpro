@@ -603,47 +603,65 @@ function waitAndSwitchToWindow(exename)
     endif
 endfunction
 
-function captureToDoList(toDoListPath, taskListPath, minimizeAfterCapture, waitTime, additionalCmds)
-    local title
-    local comment
+function captureToDoList(toDoListPath, taskListPath, minimizeAfterCapture, waitTime, additionalCmds, defaultTitle, defaultComment)
+    local title = defaultTitle
+    local comment = defaultComment
     local startDate
     local endDate
-    Inputdialog("title=Title, comment=Comment, startDate=Start date, endDate= End date","ToDoList Capture")
-    if (title != "") do
-        local params = "-f " ++ "\"" ++ taskListPath ++ "\" " ++ "-nt " ++ "\"" ++ title ++ "\""
-        if (comment) do
-            params = params ++ " -cm " ++ "\"" ++ comment ++ "\""
+    local result = Inputdialog("title=Title, comment=Comment, startDate=Start date, endDate= End date","ToDoList Capture")
+    if (result) do
+        if (title != "") do
+            local params = "-f " ++ "\"" ++ taskListPath ++ "\" " ++ "-nt " ++ "\"" ++ title ++ "\""
+            if (comment) do
+                params = params ++ " -cm " ++ "\"" ++ comment ++ "\""
+            endif
+
+            if (startDate) do
+                params = params ++ " -sd " ++ "\"" ++ startDate ++ "\""
+            endif
+
+            if (endDate) do
+                params = params ++ " -dd " ++ "\"" ++ endDate ++ "\""
+            endif
+
+            if (additionalCmds) do
+                params = params ++ " " ++ additionalCmds
+            endif
+            do(toDoListPath, params)
         endif
 
-        if (startDate) do
-            params = params ++ " -sd " ++ "\"" ++ startDate ++ "\""
-        endif
+        if (minimizeAfterCapture) do
+            if (waitTime) do
+                wait.forinterval(waitTime)
+            else
+                wait.for(1500)
+            endif
 
-        if (endDate) do
-            params = params ++ " -dd " ++ "\"" ++ endDate ++ "\""
-        endif
-
-        if (additionalCmds) do
-            params = params ++ " " ++ additionalCmds
-        endif
-        do(toDoListPath, params)
-    endif
-
-    if (minimizeAfterCapture) do
-        if (waitTime) do
-            wait.forinterval(waitTime)
+            if (!win.minned("=ToDoList")) do
+                win.minimize("=ToDoList")
+            endif
         else
-            wait.for(1500)
+            local windowHandle = window("visiblewindow", "=ToDoList")
+            if (windowHandle) do
+                window.show("=ToDoList")
+            endif
         endif
+    endif
+endfunction
 
-        if (!win.minned("=ToDoList")) do
-            win.minimize("=ToDoList")
+function captureToDoListFromWeb(toDoListPath, taskListPath, minimizeAfterCapture, waitTime, additionalCmds)
+    local url = input("Capture from URL to ToDoList")
+    local tmpFile = env("TEMP") ++ "\\tmp_todolist_capture.txt"
+    local webCaptureHelperPath = pprofolder ++ "scripts\\WebCaptureHelper.py"
+    local cmd = "\"" ++ webCaptureHelperPath ++ "\"" ++ " --url " ++ url ++ " --output " ++ "\"" ++ tmpFile ++ "\""
+    file.runwait(60000, "python.exe", cmd, "", "hide")
+    if (file.validpath(tmpFile)) do
+        local text = file.readall(tmpFile)
+        if (text) do
+            local title = ansitoutf8(line(text, 2))
+            captureToDoList(toDoListPath, taskListPath, minimizeAfterCapture, waitTime, additionalCmds, url, title)
         endif
-    else
-        local windowHandle = window("visiblewindow", "=ToDoList")
-        if (windowHandle) do
-            window.show("=ToDoList")
-        endif
+        file.deletenorecycle(tmpFile)
     endif
 endfunction
 
