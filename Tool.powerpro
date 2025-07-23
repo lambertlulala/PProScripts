@@ -611,8 +611,10 @@ function captureToDoList(toDoListPath, taskListPath, minimizeAfterCapture, waitT
     local result = Inputdialog("title=Title, comment=Comment, startDate=Start date, endDate= End date","ToDoList Capture")
     if (result) do
         if (title != "") do
+            title  = replacechars(title, "\n\r ")
             local params = "-f " ++ "\"" ++ taskListPath ++ "\" " ++ "-nt " ++ "\"" ++ title ++ "\""
             if (comment) do
+                comment = replacechars(comment, "\n\r ")
                 params = params ++ " -cm " ++ "\"" ++ comment ++ "\""
             endif
 
