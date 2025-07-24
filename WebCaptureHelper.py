@@ -24,6 +24,6 @@ if __name__ == '__main__':
     args = parser.parse_args()
 
     title = get_title_from_url(args.url)
-    with open(args.output, 'w') as file:
+    with open(args.output, 'w', encoding='utf-8') as file:
         file.write(args.url + '\n')
         file.write(title)
