@@ -606,9 +606,10 @@ endfunction
 function captureToDoList(toDoListPath, taskListPath, minimizeAfterCapture, waitTime, additionalCmds, defaultTitle, defaultComment)
     local title = defaultTitle
     local comment = defaultComment
+    local additionalCommands = additionalCmds
     local startDate
     local endDate
-    local result = Inputdialog("title=Title, comment=Comment, startDate=Start date, endDate= End date","ToDoList Capture")
+    local result = Inputdialog("title=Title, comment=Comment, startDate=Start date, endDate=End date,additionalCommands=Additional commands","ToDoList Capture")
     if (result) do
         if (title != "") do
             title  = replacechars(title, "\n\r ")
@@ -626,8 +627,8 @@ function captureToDoList(toDoListPath, taskListPath, minimizeAfterCapture, waitT
                 params = params ++ " -dd " ++ "\"" ++ endDate ++ "\""
             endif
 
-            if (additionalCmds) do
-                params = params ++ " " ++ additionalCmds
+            if (additionalCommands) do
+                params = params ++ " " ++ additionalCommands
             endif
             do(toDoListPath, params)
         endif
