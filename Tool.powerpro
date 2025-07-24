@@ -661,7 +661,7 @@ function captureToDoListFromWeb(toDoListPath, taskListPath, minimizeAfterCapture
     if (file.validpath(tmpFile)) do
         local text = file.readall(tmpFile)
         if (text) do
-            local title = ansitoutf8(line(text, 2))
+            local title = line(text, 2)
             captureToDoList(toDoListPath, taskListPath, minimizeAfterCapture, waitTime, additionalCmds, url, title)
         endif
         file.deletenorecycle(tmpFile)
