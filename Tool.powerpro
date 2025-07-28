@@ -609,6 +609,7 @@ function captureToDoList(toDoListPath, taskListPath, minimizeAfterCapture, waitT
     local additionalCommands = additionalCmds
     local startDate
     local endDate
+    setnextdialogpos("", "", "", "", "topmost")
     local result = Inputdialog("title=Title, comment=Comment, startDate=Start date, endDate=End date,additionalCommands=Additional commands","ToDoList Capture")
     if (result) do
         if (title != "") do
