@@ -656,7 +656,7 @@ endfunction
 function captureToDoListFromWeb(toDoListPath, taskListPath, minimizeAfterCapture, waitTime, additionalCmds)
     local url = input("Capture from URL to ToDoList")
     local tmpFile = env("TEMP") ++ "\\tmp_todolist_capture.txt"
-    local webCaptureHelperPath = pprofolder ++ "scripts\\WebCaptureHelper.py"
+    local webCaptureHelperPath = pprofolder ++ "scripts\\web_capture_helper.py"
     local cmd = "\"" ++ webCaptureHelperPath ++ "\"" ++ " --url " ++ url ++ " --output " ++ "\"" ++ tmpFile ++ "\""
     file.runwait(60000, "python.exe", cmd, "", "hide")
     if (file.validpath(tmpFile)) do
@@ -712,5 +712,15 @@ function insertDateTime()
         local newTime = formattime("HH:mm:ss", oriTime)
         local newDateTime = newDate ++ " " ++ newTime
         *Keys {to *}&(newDateTime)
+    endif
+endfunction
+
+function convertHtmlClipboard(pandocPath, defaultType)
+    local type = defaultType
+    local result = Inputdialog("type=Type??org|md", "Convert HTML in clipboard")
+    if (result) do
+        local scriptPath = pprofolder ++ "scripts\\convert_html_clipboard.py"
+        local cmd = "\"" ++ scriptPath ++ "\"" ++ " -p " ++ "\"" ++ pandocPath ++ "\"" ++ " -t " ++ "\"" ++ type ++ "\""
+        do("python.exe", cmd)
     endif
 endfunction

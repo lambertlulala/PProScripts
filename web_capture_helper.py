@@ -13,7 +13,7 @@ def get_title_with_playwright(url: str) -> str:
 
 
 if __name__ == '__main__':
-    parser = argparse.ArgumentParser(prog='WebCaptureHelper', description='Capture the title from a given URL.')
+    parser = argparse.ArgumentParser(prog='Web Capture Helper', description='Capture the title from a given URL.')
     parser.add_argument('-u', '--url', required=True, help='The URL of the webpage(required).')
     parser.add_argument('-o', '--output', required=True, help='The output file contained with the title and the source URL.')
     args = parser.parse_args()
