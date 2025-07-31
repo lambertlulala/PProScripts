@@ -715,12 +715,23 @@ function insertDateTime()
     endif
 endfunction
 
-function convertHtmlClipboard(pandocPath, defaultType)
-    local type = defaultType
-    local result = Inputdialog("type=Type??org|md", "Convert HTML in clipboard")
-    if (result) do
+function copyHtmlAs(sendCopy, pandocPath, type)
+    if (sendCopy) do
+        *Clip Copy
+        wait.for(50)
+    endif
+
+    if (type) do
         local scriptPath = pprofolder ++ "scripts\\convert_html_clipboard.py"
         local cmd = "\"" ++ scriptPath ++ "\"" ++ " -p " ++ "\"" ++ pandocPath ++ "\"" ++ " -t " ++ "\"" ++ type ++ "\""
         do("python.exe", cmd)
+    endif
+endfunction
+
+function convertHtmlClipboard(pandocPath, defaultType)
+    local type = defaultType
+    local result = Inputdialog("type=Type??org|markdown", "Convert HTML in clipboard")
+    if (result) do
+        copyHtmlAs(0, pandocPath, type)
     endif
 endfunction

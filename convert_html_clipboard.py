@@ -1,5 +1,4 @@
 import win32clipboard
-import html2text
 import subprocess
 import tempfile
 import os
@@ -31,25 +30,19 @@ def get_html_from_clipboard():
     finally:
         win32clipboard.CloseClipboard()
 
-def convert_html_to_markdown(html):
-    converter = html2text.HTML2Text()
-    converter.ignore_links = False
-    converter.ignore_images = False
-    return converter.handle(html)
 
-
-def convert_html_to_org(pandoc_path, html):
+def convert_html_to(pandoc_path, html, output_type):
     # Use temporary file to pass HTML to Pandoc
     with tempfile.NamedTemporaryFile(delete=False, suffix=".html", mode="w", encoding="utf-8") as tmp_in:
         tmp_in.write(html)
         tmp_in_path = tmp_in.name
 
-    # Temporary output file for Org
-    tmp_out_path = tmp_in_path + ".org"
+    # Temporary output file for type
+    tmp_out_path = tmp_in_path + "." + output_type
     try:
         subprocess.run([
             pandoc_path, tmp_in_path,
-            "-f", "html", "-t", "org",
+            "-f", "html", "-t", output_type,
             "-o", tmp_out_path
         ], check=True)
 
@@ -76,10 +69,6 @@ if __name__ == '__main__':
     parser.add_argument('-t', '--type', required=True, help='Convert to Org Mode format.')
     args = parser.parse_args()
 
-    if args.type == 'org':
-        html_content = get_html_from_clipboard()
-        org_content = convert_html_to_org(args.pandoc, html_content)
-        set_clipboard_text(org_content)
-    elif args.type == 'md':
-        markdown = convert_html_to_markdown(html_content)
-        set_clipboard_text(markdown)
+    html_content = get_html_from_clipboard()
+    org_content = convert_html_to(args.pandoc, html_content, args.type)
+    set_clipboard_text(org_content)
