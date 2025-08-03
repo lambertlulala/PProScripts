@@ -669,6 +669,29 @@ function captureToDoListFromWeb(toDoListPath, taskListPath, minimizeAfterCapture
     endif
 endfunction
 
+function copyAsOrgLink(sendCopy)
+    if (sendCopy) do
+        *Clip Copy
+        wait.for(50)
+    endif
+
+    local url = clip.get
+    local tmpFile = env("TEMP") ++ "\\tmp_org_link.txt"
+    local webCaptureHelperPath = pprofolder ++ "scripts\\web_capture_helper.py"
+    local cmd = "\"" ++ webCaptureHelperPath ++ "\"" ++ " --url " ++ url ++ " --output " ++ "\"" ++ tmpFile ++ "\""
+    file.runwait(60000, "python.exe", cmd, "", "hide")
+    if (file.validpath(tmpFile)) do
+        local text = file.readall(tmpFile)
+        if (text) do
+            local title = line(text, 2)
+            local orgLink = "[[" ++ url ++ "][" ++ title ++ "]]"
+            clip.set(orgLink, 1)
+            *Message Successfully copy org link.
+        endif
+        file.deletenorecycle(tmpFile)
+    endif
+endfunction
+
 function executeTortoiseGitCommand(command, path)
     local params = "/command:" ++ command
     if (path) do
