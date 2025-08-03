@@ -722,8 +722,8 @@ function copyHtmlAs(sendCopy, pandocPath, type)
     endif
 
     if (type) do
-        local scriptPath = pprofolder ++ "scripts\\convert_html_clipboard.py"
-        local cmd = "\"" ++ scriptPath ++ "\"" ++ " -p " ++ "\"" ++ pandocPath ++ "\"" ++ " -t " ++ "\"" ++ type ++ "\""
+        local scriptPath = pprofolder ++ "scripts\\convert_clipboard.py"
+        local cmd = "\"" ++ scriptPath ++ "\"" ++ " -p " ++ "\"" ++ pandocPath ++ "\"" ++ " -s " ++ "\"" ++ "html" ++ "\"" ++ " -o " ++ "\"" ++ type ++ "\""
         do("python.exe", cmd)
     endif
 endfunction
