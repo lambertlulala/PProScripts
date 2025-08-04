@@ -653,19 +653,29 @@ function captureToDoList(toDoListPath, taskListPath, minimizeAfterCapture, waitT
     endif
 endfunction
 
-function captureToDoListFromWeb(toDoListPath, taskListPath, minimizeAfterCapture, waitTime, additionalCmds)
-    local url = input("Capture from URL to ToDoList")
-    local tmpFile = env("TEMP") ++ "\\tmp_todolist_capture.txt"
-    local webCaptureHelperPath = pprofolder ++ "scripts\\web_capture_helper.py"
-    local cmd = "\"" ++ webCaptureHelperPath ++ "\"" ++ " --url " ++ url ++ " --output " ++ "\"" ++ tmpFile ++ "\""
-    file.runwait(60000, "python.exe", cmd, "", "hide")
-    if (file.validpath(tmpFile)) do
-        local text = file.readall(tmpFile)
-        if (text) do
-            local title = line(text, 2)
-            captureToDoList(toDoListPath, taskListPath, minimizeAfterCapture, waitTime, additionalCmds, url, title)
+function captureToDoListFromWeb(sendCopy, toDoListPath, taskListPath, minimizeAfterCapture, waitTime, additionalCmds)
+    local url
+    if (sendCopy) do
+        *Clip Copy
+        wait.for(50)
+        url = clip.get
+    else
+        url = input("Capture from URL to ToDoList")
+    endif
+
+    if (url) do
+        local tmpFile = env("TEMP") ++ "\\tmp_todolist_capture.txt"
+        local webCaptureHelperPath = pprofolder ++ "scripts\\web_capture_helper.py"
+        local cmd = "\"" ++ webCaptureHelperPath ++ "\"" ++ " --url " ++ url ++ " --output " ++ "\"" ++ tmpFile ++ "\""
+        file.runwait(60000, "python.exe", cmd, "", "hide")
+        if (file.validpath(tmpFile)) do
+            local text = file.readall(tmpFile)
+            if (text) do
+                local title = line(text, 2)
+                captureToDoList(toDoListPath, taskListPath, minimizeAfterCapture, waitTime, additionalCmds, url, title)
+            endif
+            file.deletenorecycle(tmpFile)
         endif
-        file.deletenorecycle(tmpFile)
     endif
 endfunction
 
