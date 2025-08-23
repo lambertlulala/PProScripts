@@ -1,0 +1,15 @@
+
+Function RightMouse(down)
+    static MouseX, MouseY
+    if (down) do
+        MouseX=xmouse
+        MouseY=ymouse
+        mousegesture.track(1)
+    else
+        mousegesture.track(0)
+        if(abs(MouseX-xmouse)<5 && abs(MouseY-ymouse)<5) do
+        win.sendmouse("rd ru")
+        endif
+    endif
+    return
+EndFunction
