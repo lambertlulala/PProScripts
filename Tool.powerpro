@@ -4,12 +4,11 @@ function _autoinit_()
     global WINDOWS_RUNEMACS_PATH
 endfunction
 
-function copyPproconfTo(dstPath)
-    local pproconf = pprofolder ++ "pproconf.pcf"
-    if (file.copy(pproconf, dstPath)) do
-        *Message Successfully copy pproconf.pcf to &(dstPath)
+function copyFile(srcPath, dstPath)
+    if (file.copy(srcPath, dstPath)) do
+        *Message Successfully copy &(srcPath) to &(dstPath)
     else
-        *Message Failed to copy pproconf.pcf to ++ &(dstPath)
+        *Message Failed to copy &(srcPath) to ++ &(dstPath)
     endif
 endfunction
 
