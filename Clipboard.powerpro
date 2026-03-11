@@ -53,7 +53,7 @@ endfunction
 function listClipsFromDb()
     local db = "\"" ++ getDbPath() ++ "\""
     local tmpResultFile = env("TEMP") ++ "\\tmp_clip_db_result.txt"
-    local outputCmd = "\".output " ++ tmpResultFile ++ "\""
+    local outputCmd = "\".mode list \" \".output " ++ tmpResultFile ++ "\""
     local cmd = db ++ " " ++ outputCmd ++ " \"" ++ "SELECT printf('[%d][TAGS: %s] %.256s', ClipId, ClipTags, CASE WHEN instr(TextData, '\n') > 0 THEN replace(replace(TextData, '\n', ' '), '\r', ' ') ELSE TextData END) AS FormattedOutput FROM Clipboard ORDER BY ClipId DESC;" ++ "\""
     file.runwait(3600000, "sqlite3.exe", cmd, "", "hide")
     local clips = file.readall(tmpResultFile)
@@ -64,7 +64,7 @@ endfunction
 function listLimitedNumberOfClipsFromDb(limitedCount)
     local db = "\"" ++ getDbPath() ++ "\""
     local tmpResultFile = env("TEMP") ++ "\\tmp_clip_db_result.txt"
-    local outputCmd = "\".output " ++ tmpResultFile ++ "\""
+    local outputCmd = "\".mode list \" \".output " ++ tmpResultFile ++ "\""
     local cmd
     cmd = db ++ " " ++ outputCmd ++ " \"" ++ "SELECT printf('[%d][TAGS: %s] %.256s', ClipId, ClipTags, CASE WHEN instr(TextData, '\n') > 0 THEN replace(replace(TextData, '\n', ' '), '\r', ' ') ELSE TextData END) AS FormattedOutput FROM Clipboard ORDER BY ClipId DESC LIMIT " ++ limitedCount ++ ";\""
     file.runwait(3600000, "sqlite3.exe", cmd, "", "hide")
@@ -76,7 +76,7 @@ endfunction
 function listAllClipsWithTagsFromDb()
     local db = "\"" ++ getDbPath() ++ "\""
     local tmpResultFile = env("TEMP") ++ "\\tmp_clip_db_result.txt"
-    local outputCmd = "\".output " ++ tmpResultFile ++ "\""
+    local outputCmd = "\".mode list \" \".output " ++ tmpResultFile ++ "\""
     local cmd = db ++ " " ++ outputCmd ++ " \"" ++ "SELECT printf('[%d][TAGS: %s] %.256s', ClipId, ClipTags, CASE WHEN instr(TextData, '\n') > 0 THEN replace(replace(TextData, '\n', ' '), '\r', ' ') ELSE TextData END) AS FormattedOutput FROM Clipboard WHERE ClipTags IS NOT NULL AND ClipTags != '' ORDER BY ClipId DESC;" ++ "\""
     file.runwait(3600000, "sqlite3.exe", cmd, "", "hide")
     local clips = file.readall(tmpResultFile)
@@ -203,7 +203,7 @@ endfunction
 function searchClipsInDb(text)
     local db = "\"" ++ getDbPath() ++ "\""
     local tmpResultFile = env("TEMP") ++ "\\tmp_clip_db_search_result.txt"
-    local outputCmd = "\".output " ++ tmpResultFile ++ "\""
+    local outputCmd = "\".mode list \" \".output " ++ tmpResultFile ++ "\""
     local cmd = db ++ " " ++ outputCmd ++ " \"" ++ "SELECT printf('[%d][TAGS: %s] %.256s', ClipId, ClipTags, CASE WHEN instr(TextData, '\n') > 0 THEN replace(replace(TextData, '\n', ' '), '\r', ' ') ELSE TextData END) FROM Clipboard WHERE TextData LIKE '%" ++ text ++ "%' ORDER BY ClipId DESC;"
     file.runwait(3600000, "sqlite3.exe", cmd, "", "hide")
     local clips = file.readall(tmpResultFile)
@@ -214,7 +214,7 @@ endfunction
 function searchClipsWithTagsInDb(tags)
     local db = "\"" ++ getDbPath() ++ "\""
     local tmpResultFile = env("TEMP") ++ "\\tmp_clip_db_search_result.txt"
-    local outputCmd = "\".output " ++ tmpResultFile ++ "\""
+    local outputCmd = "\".mode list \" \".output " ++ tmpResultFile ++ "\""
     local cmd = db ++ " " ++ outputCmd ++ " \"" ++ "SELECT printf('[%d][TAGS: %s] %.256s', ClipId, ClipTags, CASE WHEN instr(TextData, '\n') > 0 THEN replace(replace(TextData, '\n', ' '), '\r', ' ') ELSE TextData END) FROM Clipboard WHERE ClipTags LIKE '%" ++ tags ++ "%';"
     file.runwait(3600000, "sqlite3.exe", cmd, "", "hide")
     local clips = file.readall(tmpResultFile)
