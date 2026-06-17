@@ -331,7 +331,7 @@ function switchToWindow(barName, width, height)
         local rect = win.getrect(inputHandle)
         local x = word(rect, 1)
         local y = word(rect, 2)
-        win.sendmouse("ab", x, y, "lc")
+        win.sendmouse("ab", x + 1, y + 1, "lc")
         quit
     endif
 
@@ -404,7 +404,7 @@ function handleClipboard(barName)
         local rect = win.getrect(inputHandle)
         local x = word(rect, 1)
         local y = word(rect, 2)
-        win.sendmouse("ab", x, y, "lc")
+        win.sendmouse("ab", x + 1, y + 1, "lc")
         quit
     endif
 
@@ -563,7 +563,7 @@ function runStartApps(barName)
         local rect = win.getrect(inputHandle)
         local x = word(rect, 1)
         local y = word(rect, 2)
-        win.sendmouse("ab", x, y, "lc")
+        win.sendmouse("ab", x + 1, y + 1, "lc")
         quit
     endif
 
