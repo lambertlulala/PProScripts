@@ -2,6 +2,7 @@
 function _autoinit_()
     global WINDOWS_EMACS_CLIENT_PATH
     global WINDOWS_RUNEMACS_PATH
+    global gMapWindowBlackList = map.create(1)
 endfunction
 
 function copyFile(srcPath, dstPath)
@@ -351,15 +352,15 @@ function switchToWindow(barName, width, height)
         local text = win.gettext(handle)
         if (text != "") do
             local fullPath = window("exefullpath", handle)
-            local display = "[" ++ handle ++ "]    " ++ text ++ "    (" ++ fullPath ++ ")"
-            windowList = windowList ++ display ++ "\r"
+            local pos = revfind(fullPath, "\\")
+            local len = length(fullPath)
+            local filename = slice(fullPath, pos + 1, len)
+            if ("" == gMapWindowBlackList.get(filename)) do
+                local display = "[" ++ handle ++ "]    " ++ text ++ "    (" ++ fullPath ++ ")"
+                windowList = windowList ++ display ++ "\r"
+            endif
         endif
     endfor
-
-    if (cl.exists(barName)) do
-        local hBar = cl.getBarHandle(barName)
-        win.setfocus(hBar)
-    endif
 
     local x = win.vscreenwidth / 2 - width / 2
     local y = win.vscreenheight / 2 - height / 2
@@ -372,8 +373,12 @@ function switchToWindow(barName, width, height)
             local handle = slice(sel, idxBeg + 1, idxEnd - 1)
             window.show(handle)
         endif
-    else
-        win.resetfocus(15)
+    endif
+endfunction
+
+function addWindowBlackList(exeName, value)
+    if ("" != exeName && "" != value) do
+        gMapWindowBlackList[exeName]=value
     endif
 endfunction
 
