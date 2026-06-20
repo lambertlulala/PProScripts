@@ -325,7 +325,7 @@ function searchAndEditWith(barName)
     endif
 endfunction
 
-function switchToWindow(barName, width, height)
+function switchToWindow(width, height)
     local inputTitle = "Switch to window"
     local inputHandle = window("visiblewindow", "*" ++ inputTitle ++ "*")
     if (win.exists(inputHandle)) do
