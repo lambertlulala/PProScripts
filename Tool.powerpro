@@ -325,7 +325,7 @@ function searchAndEditWith(barName)
     endif
 endfunction
 
-function switchToWindow(width, height)
+function switchToWindow(barName, width, height)
     local inputTitle = "Switch to window"
     local inputHandle = window("visiblewindow", "*" ++ inputTitle ++ "*")
     if (win.exists(inputHandle)) do
@@ -365,14 +365,21 @@ function switchToWindow(width, height)
     local x = win.vscreenwidth / 2 - width / 2
     local y = win.vscreenheight / 2 - height / 2
     setnextdialogpos(x, y, width, height, "topmost")
+
     local sel = pickstring(windowList, inputTitle, 2)
+    local switched = 0
     if (sel) do
         local idxBeg = find(sel, "[")
         local idxEnd = find(sel, "]")
         if (idxBeg != -1 && idxEnd != -1 && idxEnd -1 >= idxBeg) do
             local handle = slice(sel, idxBeg + 1, idxEnd - 1)
             window.show(handle)
+            switched = 1
         endif
+    endif
+
+    if (0 == switched) do
+        win.resetfocus(15)
     endif
 endfunction
 
@@ -779,4 +786,41 @@ endfunction
 
 function convertClipboardFromMarkdownToOrgMode(pandocPath)
     convertClipboard(pandocPath, "markdown", "org")
+endfunction
+
+function runCommand(barName)
+    local pproCmdPrefix = ">"
+    local cmd = input("Run command")
+    if ("" != cmd) do
+        local pproCmd = ""
+        if (length(cmd) > 1) do
+            local prefix = slice(cmd, 0, 0)
+            if (pproCmdPrefix == prefix) do
+                pproCmd = slice(cmd, 1, length(cmd) - 1)
+            endif
+        endif
+
+        if ("" != pproCmd) do
+            do(pproCmd)
+        else
+            local candidate
+            if ("" != file.findexe("es.exe")) do
+                local searchResult = everythingSearchRedirectToTmpFile(cmd)
+                setnextdialogpos(win.vscreenwidth / 2 - 400, win.vscreenheight / 2 - 200, 800, 400, "topmost")
+                candidate = pickstring(searchResult, "Pick Result", 2)
+            else
+                candidate = cmd
+            endif
+
+            if ("" != candidate) do
+                local params
+                local result = inputdialog("params=Parameters", "Parameters for " ++ candidate)
+                if (result) do
+                    do(candidate, params)
+                endif
+            endif
+        endif
+    endif
+
+    win.resetfocus(15)
 endfunction

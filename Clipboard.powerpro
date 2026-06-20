@@ -99,10 +99,6 @@ function handleClipboardInDb(barName, clipLimitCount)
         quit
     endif
 
-    if (cl.exists(barName)) do
-        win.setfocus(cl.getBarHandle(barName))
-    endif
-
     local candidates
     local clipActionInfo
     local clipCount
