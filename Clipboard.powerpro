@@ -89,7 +89,7 @@ function getDbPath()
 endfunction
 
 function handleClipboardInDb(barName, clipLimitCount)
-    local inputTitle = "Select clipboard item"
+    local inputTitle = "Select clipboard item (" ++ scriptname ++ ")"
     local showResult = .CustomEvent@showWindow(inputTitle)
     if (1 == showResult) do
         quit

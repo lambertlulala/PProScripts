@@ -178,7 +178,7 @@ function searchAndPickResult(barName)
 endfunction
 
 function switchToWindow(barName, width, height)
-    local inputTitle = "Switch to window"
+    local inputTitle = "Switch to window (" ++ scriptname ++ ")"
     local showResult = .CustomEvent@showWindow(inputTitle)
     if (1 == showResult) do
         quit
@@ -498,7 +498,7 @@ function convertClipboardFromMarkdownToOrgMode(pandocPath)
 endfunction
 
 function runCommand(barName)
-    local title = "Run command"
+    local title = "Run command (" ++ scriptname ++ ")"
     local eventHandle = .CustomEvent@createShowWindowEvent(title, 50, 3)
     local pproCmdPrefix = ">"
     local cmd = input(title)
@@ -530,7 +530,7 @@ function runCommand(barName)
 
             if ("" != candidate) do
                 local params
-                title = "Parameters for " ++ candidate
+                title = "Parameters for " ++ candidate ++ " (" ++ scriptname ++ ")"
                 eventHandle = .CustomEvent@createShowWindowEvent(title, 50, 3)
                 local result = inputdialog("params=Parameters", title)
                 .CustomEvent@destroyShowWindowEvent(eventHandle)
