@@ -90,6 +90,11 @@ endfunction
 
 function handleClipboardInDb(barName, clipLimitCount)
     local inputTitle = "Select clipboard item"
+    local showResult = .CustomEvent@showWindow(inputTitle)
+    if (1 == showResult) do
+        quit
+    endif
+
     local candidates
     local clipActionInfo
     local clipCount

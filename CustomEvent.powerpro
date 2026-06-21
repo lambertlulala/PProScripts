@@ -1,12 +1,16 @@
 
 function showWindow(title)
     local inputHandle = window("visiblewindow", "*" ++ title ++ "*")
+    local result = 0
     if (win.exists(inputHandle)) do
         local rect = win.getrect(inputHandle)
         local x = word(rect, 1)
         local y = word(rect, 2)
         win.sendmouse("ab", x + 1, y + 1, "lc")
+        result = 1
     endif
+
+    return(result)
 endfunction
 
 function createShowWindowEvent(title, eventDurationInMs, eventCount)

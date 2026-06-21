@@ -179,6 +179,11 @@ endfunction
 
 function switchToWindow(barName, width, height)
     local inputTitle = "Switch to window"
+    local showResult = .CustomEvent@showWindow(inputTitle)
+    if (1 == showResult) do
+        quit
+    endif
+
     local wlist = window("visiblewindow", "*")
     local windowList
     for (local j = 1; ; j++)
