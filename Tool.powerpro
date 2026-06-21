@@ -499,9 +499,35 @@ function convertClipboardFromMarkdownToOrgMode(pandocPath)
     convertClipboard(pandocPath, "markdown", "org")
 endfunction
 
+function showWindow(title)
+    local inputHandle = window("visiblewindow", "*" ++ title ++ "*")
+    if (win.exists(inputHandle)) do
+        local rect = win.getrect(inputHandle)
+        local x = word(rect, 1)
+        local y = word(rect, 2)
+        win.sendmouse("ab", x + 1, y + 1, "lc")
+    endif
+endfunction
+
+function createShowWindowEvent(title, eventDurationInMs, eventCount)
+    local eventCmd = "." ++ scriptname ++ "@showWindow(\"" ++ title ++ "\")"
+    local eventHandle = event.createms(eventDurationInMs, eventCount, eventCmd)
+    win.debug(eventCmd)
+    return(eventHandle)
+endfunction
+
+function destroyShowWindowEvent(eventHandle)
+    if (eventHandle && eventHandle.exists) do
+        eventHandle = eventHandle.destroy
+    endif
+endfunction
+
 function runCommand(barName)
+    local title = "Run command"
+    local eventHandle = createShowWindowEvent(title, 50, 3)
     local pproCmdPrefix = ">"
-    local cmd = input("Run command")
+    local cmd = input(title)
+    destroyShowWindowEvent(eventHandle)
     if ("" != cmd) do
         local pproCmd = ""
         if (length(cmd) > 1) do
@@ -517,8 +543,12 @@ function runCommand(barName)
             local candidate
             if ("" != file.findexe("es.exe")) do
                 local searchResult = everythingSearchRedirectToTmpFile(cmd)
+
+                title = "Pick Result"
+                eventHandle = createShowWindowEvent(title, 50, 3)
                 setnextdialogpos(win.vscreenwidth / 2 - 400, win.vscreenheight / 2 - 200, 800, 400, "topmost")
-                candidate = pickstring(searchResult, "Pick Result", 2)
+                candidate = pickstring(searchResult, title, 2)
+                destroyShowWindowEvent(eventHandle)
             else
                 candidate = cmd
             endif
