@@ -2,11 +2,13 @@
 function showWindow(title)
     local inputHandle = window("visiblewindow", "*" ++ title ++ "*")
     local result = 0
-    if (win.exists(inputHandle) && 1 != win.activewindow(inputHandle)) do
-        local rect = win.getrect(inputHandle)
-        local x = word(rect, 1)
-        local y = word(rect, 2)
-        win.sendmouse("ab", x + 1, y + 1, "lc")
+    if (win.exists(inputHandle)) do
+        if (1 != win.activewindow(inputHandle)) do
+            local rect = win.getrect(inputHandle)
+            local x = word(rect, 1)
+            local y = word(rect, 2)
+            win.sendmouse("ab", x + 1, y + 1, "lc")
+        endif
         result = 1
     endif
 
