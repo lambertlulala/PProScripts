@@ -2,7 +2,7 @@
 function showWindow(title)
     local inputHandle = window("visiblewindow", "*" ++ title ++ "*")
     local result = 0
-    if (win.exists(inputHandle)) do
+    if (win.exists(inputHandle) && 1 != win.activewindow(inputHandle)) do
         local rect = win.getrect(inputHandle)
         local x = word(rect, 1)
         local y = word(rect, 2)
