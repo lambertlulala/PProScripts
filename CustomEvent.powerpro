@@ -1,0 +1,22 @@
+
+function showWindow(title)
+    local inputHandle = window("visiblewindow", "*" ++ title ++ "*")
+    if (win.exists(inputHandle)) do
+        local rect = win.getrect(inputHandle)
+        local x = word(rect, 1)
+        local y = word(rect, 2)
+        win.sendmouse("ab", x + 1, y + 1, "lc")
+    endif
+endfunction
+
+function createShowWindowEvent(title, eventDurationInMs, eventCount)
+    local eventCmd = "." ++ scriptname ++ "@showWindow(\"" ++ title ++ "\")"
+    local eventHandle = event.createms(eventDurationInMs, eventCount, eventCmd)
+    return(eventHandle)
+endfunction
+
+function destroyShowWindowEvent(eventHandle)
+    if (eventHandle && eventHandle.exists) do
+        eventHandle = eventHandle.destroy
+    endif
+endfunction
