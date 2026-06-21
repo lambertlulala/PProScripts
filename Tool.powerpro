@@ -179,15 +179,6 @@ endfunction
 
 function switchToWindow(barName, width, height)
     local inputTitle = "Switch to window"
-    local inputHandle = window("visiblewindow", "*" ++ inputTitle ++ "*")
-    if (win.exists(inputHandle)) do
-        local rect = win.getrect(inputHandle)
-        local x = word(rect, 1)
-        local y = word(rect, 2)
-        win.sendmouse("ab", x + 1, y + 1, "lc")
-        quit
-    endif
-
     local wlist = window("visiblewindow", "*")
     local windowList
     for (local j = 1; ; j++)
@@ -218,7 +209,9 @@ function switchToWindow(barName, width, height)
     local y = win.vscreenheight / 2 - height / 2
     setnextdialogpos(x, y, width, height, "topmost")
 
+    local eventHandle = createShowWindowEvent(inputTitle, 50, 3)
     local sel = pickstring(windowList, inputTitle, 2)
+    destroyShowWindowEvent(eventHandle)
     local switched = 0
     if (sel) do
         local idxBeg = find(sel, "[")
