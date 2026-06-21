@@ -530,7 +530,10 @@ function runCommand(barName)
 
             if ("" != candidate) do
                 local params
-                local result = inputdialog("params=Parameters", "Parameters for " ++ candidate)
+                title = "Parameters for " ++ candidate
+                eventHandle = .CustomEvent@createShowWindowEvent(title, 50, 3)
+                local result = inputdialog("params=Parameters", title)
+                .CustomEvent@destroyShowWindowEvent(eventHandle)
                 if (result) do
                     do(candidate, params)
                 endif
