@@ -1,7 +1,5 @@
 
 function _autoinit_()
-    global WINDOWS_EMACS_CLIENT_PATH
-    global WINDOWS_RUNEMACS_PATH
     global gMapWindowBlackList = map.create(1)
 endfunction
 
@@ -21,63 +19,8 @@ function showRecyclebin()
     do("shell:RecycleBinFolder")
 endfunction
 
-function openWithTig()
-    local path = inputfolder
-    if (path) do
-        path = path.replacechars("\\", "/")
-        do("tig.exe", "-C \"" ++ path ++ "\"")
-    endif
-endfunction
-
-function openWithMinttyTig(path, class, title)
-    do(?+C:\Program Files\Git\usr\bin\mintty.exe+, "--window full --class \"" ++ class ++ "\"" ++ " --title \"" ++ title ++ "\"" ++ " --tabbar --dir " ++ "\"" ++ path ++ "\" winpty -- " ++ "/bin/bash -l -c \"tig; exec bash\"")
-endfunction
-
-function pickDirAndOpenWithMinttyTig()
-    local path = inputfolder
-    if (path) do
-        openWithMinttyTig(path, "PPro_tig", path)
-    endif
-endfunction
-
-function openWithMinttyTigFromRepoListFile(listFile, all)
-    local result = file.readall(listFile)
-    if (result) do
-        if (all == 1) do
-            for each line repo in result
-                openWithMinttyTig(repo, listFile, repo)
-                wait.for(500)
-            endfor
-        else
-            local repo = pickstring(result, "Open in Mintty tig", 2)
-            openWithMinttyTig(repo, listFile, repo)
-        endif
-    endif
-endfunction
-
-function pickRepoListFileAndOpenWithMintty(all)
-    local listFile = inputpath
-    if (listFile) do
-        openWithMinttyTigFromRepoListFile(listFile, all)
-    endif
-endfunction
-
 function copyNewGUID()
     do("pwsh.exe", "-Command [guid]::NewGuid().toString() | clip")
-endfunction
-
-function showOrgAgenda(barName)
-    if (cl.exists(barName)) do
-        local hBar = cl.getBarHandle(barName)
-        win.setfocus(hBar)
-    endif
-
-    local result
-    local tmpFile = env("TEMP") ++ "\\tmp_org_agenda.txt"
-    file.runwait(60000, "cmd.exe", ?+/c wsl.exe emacs -batch -l ~/.emacs.d/init.el -eval '(org-batch-agenda "a" org-agenda-span 30)' > + ++ tmpFile, "", "hide")
-    result = file.readall(tmpFile)
-    file.deletenorecycle(tmpFile)
-    pickstring(result, "Org Agenda", 2)
 endfunction
 
 function convertToLinuxPath(path)
@@ -103,40 +46,6 @@ function convertToLinuxPath(path)
     endif
 
     return(resultPath.removechars("\r\n"))
-endfunction
-
-function openWithMagit()
-    local repo = inputfolder
-    if (repo) do
-        local path = convertToLinuxPath(repo)
-        do("wt.exe", "new-tab wsl emacs -nw -eval '(magit-status " ++ "\\\"" ++ path.removechars("\r\n") ++ "\\\")'")
-    endif
-endfunction
-
-function editWithEmacs(path)
-    local cvtPath = convertToLinuxPath(path)
-    do("wt.exe", "new-tab wsl emacs -nw \"" ++ cvtPath ++ "\"")
-endfunction
-
-function editWithEmacsDaemon(path)
-    local cvtPath = convertToLinuxPath(path)
-    do("wt.exe", "new-tab wsl emacsclient -nw -a '' \"" ++ cvtPath ++ "\"")
-endfunction
-
-function editWithWindowsEmacs(path)
-    do(WINDOWS_RUNEMACS_PATH, "\"" ++ path ++ "\"")
-endfunction
-
-function editWithWindowsEmacsDaemon(path)
-    do(WINDOWS_EMACS_CLIENT_PATH, ?+-na "" + ++ "\"" ++ path ++ "\"")
-endfunction
-
-function editWithBowPad(path)
-    do(?+C:\Program Files\BowPad\BowPad.exe+, "/path:\"" ++ path ++ "\"")
-endfunction
-
-function editWithAkelPad(path)
-    do(?+C:\Program Files\AkelPad\AkelPad.exe+, "/OpenFile \"" ++ path ++ "\"")
 endfunction
 
 //function everythingSearch(searchPattern)
@@ -266,63 +175,6 @@ function searchAndPickResult(barName)
     endfor
 
     return(result)
-endfunction
-
-function searchAndEditWithEmacs(barName)
-    local fileToEdit = searchAndPickResult(barName)
-    if (fileToEdit) do
-        editWithEmacs(fileToEdit)
-    endif
-endfunction
-
-function searchAndEditWithEmacsDaemon(barName)
-    local fileToEdit = searchAndPickResult(barName)
-    if (fileToEdit) do
-        editWithEmacsDaemon(fileToEdit)
-    endif
-endfunction
-
-function searchAndEditWithBowPad(barName)
-    local fileToEdit = searchAndPickResult(barName)
-    if (fileToEdit) do
-        editWithBowPad(fileToEdit)
-    endif
-endfunction
-
-function searchAndEditWithAkelPad(barName)
-    local fileToEdit = searchAndPickResult(barName)
-    if (fileToEdit) do
-        editWithAkelPad(fileToEdit)
-    endif
-endfunction
-
-function searchAndEditWith(barName)
-    local fileToEdit = searchAndPickResult(barName)
-    if (fileToEdit) do
-        local action = pickstring("Emacs(Windows)\rEmacs Daemon(Windows)\rEmacs\rEmacs Daemon\rAkelPad\rBowPad\r", "Edit with", 2)
-        if (action) do
-            switch (_pickedline_)
-                case 1
-                    editWithWindowsEmacs(fileToEdit)
-                    break
-                case 2
-                    editWithWindowsEmacsDaemon(fileToEdit)
-                    break
-                case 3
-                    editWithEmacs(fileToEdit)
-                    break
-                case 4
-                    editWithEmacsDaemon(fileToEdit)
-                    break
-                case 5
-                    editWithAkelPad(fileToEdit)
-                    break
-                case 6
-                    editWithBowPad(fileToEdit)
-                    break
-            endswitch
-        endif
-    endif
 endfunction
 
 function switchToWindow(barName, width, height)
@@ -568,128 +420,6 @@ function handleClipboard(barName)
     win.resetfocus(15)
 endfunction
 
-function runStartApps(barName)
-    local inputTitle = "Run apps"
-    local inputHandle = window("visiblewindow", "*" ++ inputTitle ++ "*")
-    if (win.exists(inputHandle)) do
-        local rect = win.getrect(inputHandle)
-        local x = word(rect, 1)
-        local y = word(rect, 2)
-        win.sendmouse("ab", x + 1, y + 1, "lc")
-        quit
-    endif
-
-    if (cl.exists(barName)) do
-        win.setfocus(cl.getBarHandle(barName))
-    endif
-
-    local tmpFile = env("TEMP") ++ "\\tmp_start_apps.txt"
-    local cmd = "-Command \"Get-StartApps | ForEach-Object { \\\"$($_.Name),$($_.AppID)\\\"} | Out-File -FilePath " ++ tmpFile ++ "\""
-    file.runwait(3600000, "pwsh.exe", cmd, "", "hide")
-    local results = file.readall(tmpFile)
-    local apps
-    for each line item in results
-        apps = apps ++ word(item, 1, ",") ++ "\r"
-    endfor
-
-    local appToRun = pickstring(apps, inputTitle, 2)
-    if (appToRun) do
-        local vecApps = vec.createFromLines(results)
-        local idx = _pickedline_ - 1
-        local appId = word(vecApps[idx], 2, ",")
-        local cmdToRun = "shell:AppsFolder\\" ++ appId
-        do("explorer.exe", cmdToRun)
-    endif
-    file.deletenorecycle(tmpFile)
-
-    win.resetfocus(15)
-endfunction
-
-function waitAndSwitchToWindow(exename)
-    local pattern = "=" ++ exename
-    wait.for(window("visiblewindow", pattern))
-    local windowHandle = window("visiblewindow", pattern)
-    if (windowHandle) do
-        window.show(windowHandle)
-    endif
-endfunction
-
-function captureToDoList(toDoListPath, taskListPath, minimizeAfterCapture, waitTime, additionalCmds, defaultTitle, defaultComment)
-    local title = defaultTitle
-    local comment = defaultComment
-    local additionalCommands = additionalCmds
-    local startDate
-    local endDate
-    setnextdialogpos("", "", "", "", "topmost")
-    local result = Inputdialog("title=Title, comment=Comment, startDate=Start date, endDate=End date,additionalCommands=Additional commands","ToDoList Capture")
-    if (result) do
-        if (title != "") do
-            title  = replacechars(title, "\n\r ")
-            local params = "-f " ++ "\"" ++ taskListPath ++ "\" " ++ "-nt " ++ "\"" ++ title ++ "\""
-            if (comment) do
-                comment = replacechars(comment, "\n\r ")
-                params = params ++ " -cm " ++ "\"" ++ comment ++ "\""
-            endif
-
-            if (startDate) do
-                params = params ++ " -sd " ++ "\"" ++ startDate ++ "\""
-            endif
-
-            if (endDate) do
-                params = params ++ " -dd " ++ "\"" ++ endDate ++ "\""
-            endif
-
-            if (additionalCommands) do
-                params = params ++ " " ++ additionalCommands
-            endif
-            do(toDoListPath, params)
-        endif
-
-        if (minimizeAfterCapture) do
-            if (waitTime) do
-                wait.forinterval(waitTime)
-            else
-                wait.for(1500)
-            endif
-
-            if (!win.minned("=ToDoList")) do
-                win.minimize("=ToDoList")
-            endif
-        else
-            local windowHandle = window("visiblewindow", "=ToDoList")
-            if (windowHandle) do
-                window.show("=ToDoList")
-            endif
-        endif
-    endif
-endfunction
-
-function captureToDoListFromWeb(sendCopy, toDoListPath, taskListPath, minimizeAfterCapture, waitTime, additionalCmds)
-    local url
-    if (sendCopy) do
-        *Clip Copy
-        wait.for(50)
-        url = clip.get
-    else
-        url = input("Capture from URL to ToDoList")
-    endif
-
-    if (url) do
-        local tmpFile = env("TEMP") ++ "\\tmp_todolist_capture.txt"
-        local webCaptureHelperPath = pprofolder ++ "scripts\\web_capture_helper.py"
-        local cmd = "\"" ++ webCaptureHelperPath ++ "\"" ++ " --url " ++ url ++ " --output " ++ "\"" ++ tmpFile ++ "\""
-        file.runwait(60000, "python.exe", cmd, "", "hide")
-        if (file.validpath(tmpFile)) do
-            local text = file.readall(tmpFile)
-            if (text) do
-                local title = line(text, 2)
-                captureToDoList(toDoListPath, taskListPath, minimizeAfterCapture, waitTime, additionalCmds, url, title)
-            endif
-            file.deletenorecycle(tmpFile)
-        endif
-    endif
-endfunction
-
 function copyAsOrgLink(sendCopy)
     if (sendCopy) do
         *Clip Copy
@@ -725,25 +455,6 @@ function selectPathAndExecuteTortoiseGitCommand(command)
     local path = inputfolder
     if (path) do
         executeTortoiseGitCommand(command, path)
-    endif
-endfunction
-
-function editPathAndExecuteTortoiseGitCommand(defaultCommand, defaultPath)
-    local command = defaultCommand
-    local path = defaultPath
-    local result = Inputdialog("command=Command??log|repostatus|refbrowse|sync|clone|settings, path=Path","Execute TortoiseGit command")
-    if (result && command) do
-        executeTortoiseGitCommand(command, path)
-    endif
-endfunction
-
-function pickRepositoryAndExecuteToretoiseGitCommand(repositoryListFile, defaultCommand)
-    local repoPaths = file.readall(repositoryListFile)
-    if (repoPaths) do
-        local path = pickstring(repoPaths, "Pick a repository", 2)
-        if (path) do
-            editPathAndExecuteTortoiseGitCommand(defaultCommand, path)
-        endif
     endif
 endfunction
 
