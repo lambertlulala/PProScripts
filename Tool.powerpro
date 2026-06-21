@@ -505,7 +505,6 @@ endfunction
 function createShowWindowEvent(title, eventDurationInMs, eventCount)
     local eventCmd = "." ++ scriptname ++ "@showWindow(\"" ++ title ++ "\")"
     local eventHandle = event.createms(eventDurationInMs, eventCount, eventCmd)
-    win.debug(eventCmd)
     return(eventHandle)
 endfunction
 
