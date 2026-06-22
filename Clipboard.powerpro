@@ -118,12 +118,12 @@ function handleClipboardInDb(barName, clipLimitCount)
         endif
 
         setnextdialogpos(win.vscreenwidth / 2 - 400, win.vscreenheight / 2 - 200, 800, 400, "topmost")
-        local eventHandle = .CustomEvent@createShowWindowEvent(inputTitle, 500, 3)
+        local eventHandle = .CustomEvent@createShowWindowEvent(inputTitle, 100, 20)
         local clip = pickstring(candidates, inputTitle, 2)
         .CustomEvent@destroyShowWindowEvent(eventHandle)
         if (clip) do
             local clipId = getClipId(clip)
-            eventHandle = .CustomEvent@createShowWindowEvent(inputTitle, 500, 3)
+            eventHandle = .CustomEvent@createShowWindowEvent(inputTitle, 100, 20)
             clipActionInfo = doActionOnClip(clipId, inputTitle)
             .CustomEvent@destroyShowWindowEvent(eventHandle)
             run = clipActionInfo.keepRun
