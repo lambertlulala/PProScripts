@@ -88,7 +88,7 @@ function getDbPath()
     return(pprofolder ++ "pproclip.db")
 endfunction
 
-function handleClipboardInDb(barName, clipLimitCount)
+function handleClipboardInDb(clipLimitCount)
     local inputTitle = "Select clipboard item (" ++ scriptname ++ ")"
     local showResult = .CustomEvent@showWindow(inputTitle)
     if (1 == showResult) do
