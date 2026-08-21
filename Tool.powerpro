@@ -418,29 +418,6 @@ function handleClipboard(barName)
     win.resetfocus(15)
 endfunction
 
-function copyAsOrgLink(sendCopy)
-    if (sendCopy) do
-        *Clip Copy
-        wait.for(50)
-    endif
-
-    local url = clip.get
-    local tmpFile = env("TEMP") ++ "\\tmp_org_link.txt"
-    local webCaptureHelperPath = pprofolder ++ "scripts\\web_capture_helper.py"
-    local cmd = "\"" ++ webCaptureHelperPath ++ "\"" ++ " --url " ++ url ++ " --output " ++ "\"" ++ tmpFile ++ "\""
-    file.runwait(60000, "python.exe", cmd, "", "hide")
-    if (file.validpath(tmpFile)) do
-        local text = file.readall(tmpFile)
-        if (text) do
-            local title = line(text, 2)
-            local orgLink = "[[" ++ url ++ "][" ++ title ++ "]]"
-            clip.set(orgLink, 1)
-            *Message Successfully copy org link.
-        endif
-        file.deletenorecycle(tmpFile)
-    endif
-endfunction
-
 function executeTortoiseGitCommand(command, path)
     local params = "/command:" ++ command
     if (path) do
@@ -466,35 +443,6 @@ function insertDateTime()
         local newDateTime = newDate ++ " " ++ newTime
         *Keys {to *}&(newDateTime)
     endif
-endfunction
-
-function convertClipboard(pandocPath, srcType, dstType)
-    if (srcType && dstType) do
-        local scriptPath = pprofolder ++ "scripts\\convert_clipboard.py"
-        local cmd = "\"" ++ scriptPath ++ "\"" ++ " -p " ++ "\"" ++ pandocPath ++ "\"" ++ " -s " ++ "\"" ++ srcType ++ "\"" ++ " -o " ++ "\"" ++ dstType ++ "\""
-        do("python.exe", cmd)
-    endif
-endfunction
-
-function copyHtmlAs(sendCopy, pandocPath, type)
-    if (sendCopy) do
-        *Clip Copy
-        wait.for(50)
-    endif
-
-    convertClipboard(pandocPath, "html", type)
-endfunction
-
-function convertHtmlClipboard(pandocPath, defaultType)
-    local type = defaultType
-    local result = Inputdialog("type=Type??org|markdown", "Convert HTML in clipboard")
-    if (result) do
-        copyHtmlAs(0, pandocPath, type)
-    endif
-endfunction
-
-function convertClipboardFromMarkdownToOrgMode(pandocPath)
-    convertClipboard(pandocPath, "markdown", "org")
 endfunction
 
 function runCommand(barName)
