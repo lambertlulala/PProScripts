@@ -495,16 +495,19 @@ endfunction
 function openWith(path)
     local title = "Open path with (" ++ scriptname ++ ")"
     local eventHandle = .CustomEvent@createShowWindowEvent(title, 50, 3)
-    local executable = pickstring("Far\rTerminal\rEmacs\r", title, 2)
+    local executable = pickstring("Far Manager\rDouble Commander\rTerminal\rEmacs\r", title, 2)
     if (executable) do
         switch (_pickedline_)
             case 1
                 do(?+C:\Program Files\Far Manager\Far.exe+, "\"" ++ path ++ "\"")
                 break
             case 2
-                do(?+"wt.exe"+, ?+new-tab -p "Command Prompt" -d+ ++ " " ++ "\"" ++ file.folder(path) ++ "\"")
+                do(?+C:\Program Files\Double Commander\doublecmd.exe+, "-L " ++ "\"" ++ path ++ "\"")
                 break
             case 3
+                do(?+"wt.exe"+, ?+new-tab -p "Command Prompt" -d+ ++ " " ++ "\"" ++ file.folder(path) ++ "\"")
+                break
+            case 4
                 do(?+"C:\emacs\ucrt\nightly\bin\emacsclientw.exe"+, ?+-na ""+ ++ " " ++ "\"" ++ path ++ "\"")
                 break
         endswitch
