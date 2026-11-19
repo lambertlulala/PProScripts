@@ -514,3 +514,22 @@ function openWith(path)
     endif
     .CustomEvent@destroyShowWindowEvent(eventHandle)
 endfunction
+
+// Launch an application, document, folder, or URL through the desktop Explorer.
+function openAsUser(target, arguments, workFolder)
+    if (target == "") do
+        return("")
+    endif
+
+    local command = ?%-NoProfile -NonInteractive -STA -CommandWithArgs "(New-Object -ComObject Shell.Application).Windows().Item([uint32]8).Document.Application.ShellExecute($args[0].Substring(1), $args[1].Substring(1), $args[2].Substring(1), 'open', 1)"%
+    // Prefix each value so pwsh treats it as a positional argument.
+    command = command ++ " " ++ quoteWindowsArgument(":" ++ target) ++ " " ++ quoteWindowsArgument(":" ++ arguments) ++ " " ++ quoteWindowsArgument(":" ++ workFolder)
+    do("pwsh.exe", command, "", "hidden")
+endfunction
+
+// Escape embedded quotes and double any backslashes immediately before a quote.
+function quoteWindowsArgument(value)
+    local quoted = replaceg(value, ?%([\\]*)"%, ?%\1\1\"%)
+    quoted = replaceg(quoted, ?%(\\+)\z%, ?%\1\1%)
+    return(?%"% ++ quoted ++ ?%"%)
+endfunction
