@@ -1,3 +1,2 @@
 
-.Clipboard@onCapturingClip()
-return(0)
+return(.Clipboard@onCapturingClip())
