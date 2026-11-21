@@ -13,3 +13,18 @@ Function RightMouse(down)
     endif
     return
 EndFunction
+
+// Called from MouseGesture.ini instead of win.keys(...).
+// Sends keys to the window the gesture was drawn over (the window the plugin matched),
+// not to whatever happens to be active. "{to ^handle}" activates that window first, and
+// the ^ suppresses PowerPro's "Cannot find window to change or to send keys to" error.
+// The desktop and taskbar are skipped so e.g. {alt}{F4} cannot open the Shut Down dialog.
+Function GestureKeys(keys)
+    local h = mousegesture.lastmatch
+    if (!h || !win.exists(h))
+        quit
+    local cls = win.class(h)
+    if (cls === "Progman" || cls === "WorkerW" || cls === "Shell_TrayWnd" || cls === "Shell_SecondaryTrayWnd")
+        quit
+    win.keys("{to ^" ++ h ++ "}" ++ keys)
+EndFunction
