@@ -12,8 +12,20 @@ function getDbPath()
 endfunction
 
 // Unique temp path prefix, so a capture that runs while the picker waits never collides with it.
+// Every temp file of this script starts with %TEMP%\pproclip_ so sweepTempFiles can find leftovers.
 function makeTempBase(tag)
     return(env("TEMP") ++ "\\pproclip_" ++ tag ++ "_" ++ Date.now ++ "_" ++ random(1000000))
+endfunction
+
+// Deletes pproclip_* temp files older than an hour: leftovers of a script error, a PowerPro
+// restart, a file briefly locked by a scanner, or a sqlite3 run that timed out.
+// The age limit keeps it away from files a capture or the picker is using right now.
+function sweepTempFiles()
+    local leftovers = file.listfiles(env("TEMP") ++ "\\pproclip_*", 0)
+    for each line oldFile in leftovers
+        if (oldFile !== "" && file.age(oldFile) > 3600)
+            file.deletenorecycle(oldFile)
+    endfor
 endfunction
 
 function deleteIfExists(path)
@@ -38,20 +50,40 @@ endfunction
 // newlines and non-ASCII text cannot break the command.
 // outFile (optional): query results are written there in list mode.
 // maxWait (optional): ms to wait for sqlite3; 0 or omitted = 1 hour.
-// Returns 1 on success, 0 on any SQL error (-bail) or timeout.
+// Returns "ok", "error" (SQL error with -bail, sqlite3 did not start, or unusable temp path)
+// or "timeout" (sqlite3 is still running and may yet finish the statement).
 // .timeout makes sqlite3 wait up to 3 s for a locked db instead of failing at once.
-function runSql(sql, outFile, maxWait)
+function runSqlStatus(sql, outFile, maxWait)
     if (!maxWait)
         maxWait = 3600000
     local sqlFile = makeTempBase("sql") ++ ".sql"
+    // Paths go into dot-commands as '...', which have no way to escape a quote.
+    // All temp paths share %TEMP%, so checking sqlFile covers the caller's .output paths too.
+    if (find(sqlFile, "'") != -1 || (outFile && find(outFile, "'") != -1)) do
+        win.debug("Clipboard: temp path contains ' and cannot be passed to sqlite3: ", sqlFile)
+        return("error")
+    endif
     local script = ""
     if (outFile)
         script = ".mode list\n.output '" ++ outFile ++ "'\n"
     file.writeall(sqlFile, script ++ sql ++ "\n")
     local cmd = "-bail -cmd \".timeout 3000\" \"" ++ getDbPath() ++ "\" \".read '" ++ sqlFile ++ "'\""
     local exitCode = file.runwait(maxWait, "sqlite3.exe", cmd, "", "hide")
+    // file.runwait returns 9999999 when maxWait is exceeded.
+    if (exitCode == 9999999) do
+        // sqlite3 may still be reading sqlFile; sweepTempFiles removes it later.
+        win.debug("Clipboard: sqlite3 still running after ", maxWait, " ms")
+        return("timeout")
+    endif
     deleteIfExists(sqlFile)
-    return(exitCode !== "" && exitCode == 0)
+    if (exitCode !== "" && exitCode == 0)
+        return("ok")
+    return("error")
+endfunction
+
+// Same as runSqlStatus, but returns 1 on success and 0 on error or timeout.
+function runSql(sql, outFile, maxWait)
+    return(runSqlStatus(sql, outFile, maxWait) === "ok")
 endfunction
 
 // Lists clips for the picker. Returns a struct {lines, ids}:
@@ -142,21 +174,31 @@ function deleteClipInfoFiles(clipInfo)
     deleteIfExists(clipInfo.clipTextFile)
 endfunction
 
+// Returns "ok", "error" or "timeout" (see runSqlStatus).
 function insertClipIntoDb(clipInfo)
     local sql = "INSERT INTO Clipboard(TextData, BinaryData) VALUES (CAST(readfile(" ++ sqlStr(clipInfo.clipTextFile) ++ ") AS TEXT), readfile(" ++ sqlStr(clipInfo.clipDataFile) ++ "));"
-    return(runSql(sql, "", 30000))
+    return(runSqlStatus(sql, "", 30000))
 endfunction
 
 // Called from ClipCapturing. Returns 0 when the clip was stored in the db (PowerPro then
 // skips its own history), 1 when storing failed so PowerPro keeps the clip in its history.
 function onCapturingClip()
     local clipInfo = createClipInfoFiles()
-    local stored = 0
+    local status = "error"
     if (file.validpath(clipInfo.clipDataFile))
-        stored = insertClipIntoDb(clipInfo)
-    deleteClipInfoFiles(clipInfo)
-    if (stored)
+        status = insertClipIntoDb(clipInfo)
+    if (status === "ok") do
+        deleteClipInfoFiles(clipInfo)
         return(0)
+    endif
+    if (status === "timeout") do
+        // sqlite3 may still insert the clip, so keep its input files for it (sweepTempFiles
+        // removes them later). PowerPro keeps the clip as well: at worst it is in both places,
+        // but it is never lost.
+        win.debug("ClipCapturing: db insert timed out; clip also left to PowerPro history")
+        return(1)
+    endif
+    deleteClipInfoFiles(clipInfo)
     win.debug("ClipCapturing: clip not stored in db; left to PowerPro history")
     return(1)
 endfunction
@@ -190,9 +232,10 @@ function searchClipsWithTagsInDb(tags)
     return(queryClipList("WHERE ClipTags LIKE " ++ sqlLikeContains(tags), ""))
 endfunction
 
+// Writes the clip's binary data to a new temp file and returns its path. The file does not
+// exist if the row is gone; the caller deletes it.
 function createPProClipFileFromDb(clipId)
-    local pproclipFile = env("TEMP") ++ "\\tmp_clip_from_db.powerproclip"
-    deleteIfExists(pproclipFile)    // never hand back a stale clip if the row is gone
+    local pproclipFile = makeTempBase("clip") ++ ".powerproclip"
     runSql("SELECT writefile(" ++ sqlStr(pproclipFile) ++ ", BinaryData) FROM Clipboard WHERE ClipId = " ++ clipId ++ ";", "", 0)
     return(pproclipFile)
 endfunction
@@ -268,6 +311,7 @@ function handleClipboardInDb(clipLimitCount)
     if (1 == showResult) do
         quit
     endif
+    sweepTempFiles()
 
     local candidates
     local clipActionInfo
@@ -324,18 +368,26 @@ function doActionOnClip(clipId, inputTitle)
     local listOption = CLIP_LIST_OPTION_LIMITED
     local action = pickstring("Preview\rShow text\rCopy\rCopy as text\rEdit\rEdit clip tags\rSave as BMP\rDelete\rSearch text\rSearch clips with tags\rList all clips with tags\rList all clips\rDelete clips without tags\rClear all clips\rKeep last clips\rList formats", inputTitle, 2)
     if (action) do
-        local pproClipFile = createPProClipFileFromDb(clipId)
-        switch (_pickedline_)
+        local actionId = _pickedline_
+        // Only Preview, Copy, Save as BMP and List formats need the clip's binary data.
+        local pproClipFile = ""
+        if (actionId == 1 || actionId == 3 || actionId == 7 || actionId == 16)
+            pproClipFile = createPProClipFileFromDb(clipId)
+        switch (actionId)
             case 1
-                win.mouseto(win.vscreenwidth / 2, win.vscreenheight / 2)
-                menu.folder(pproClipFile ++ ".*", "center")
+                if (file.validpath(pproClipFile)) do
+                    win.mouseto(win.vscreenwidth / 2, win.vscreenheight / 2)
+                    menu.folder(pproClipFile ++ ".*", "center")
+                endif
                 keepRun = 1
                 break
             case 2
                 // Text comes straight from the db: no clipboard round trip.
-                local tmpNotePath = env("TEMP") ++ "\\tmp_show.txt"
+                // note.open reads the file into the note, so the file can go right away.
+                local tmpNotePath = makeTempBase("show") ++ ".txt"
                 if (writeClipTextFromDb(clipId, tmpNotePath))
                     note.open(tmpNotePath, "", 2)
+                deleteIfExists(tmpNotePath)
                 break
             case 3
                 loadClipNoCapture(pproClipFile)
@@ -355,13 +407,15 @@ function doActionOnClip(clipId, inputTitle)
                     file.runwait(0, "notepad.exe", "\"" ++ tmpClipPath ++ "\"")
                     // Build the new binary clip from the edited text, then restore the clipboard.
                     local currentData = makeTempBase("cur") ++ ".PowerProClip"
+                    local newClipFile = makeTempBase("new") ++ ".PowerProClip"
                     local hadClip = saveClipRetry(currentData)
                     clip.set(file.readall(tmpClipPath))
-                    if (saveClipRetry(pproClipFile))
-                        updateClipInDb(clipId, tmpClipPath, pproClipFile)
+                    if (saveClipRetry(newClipFile))
+                        updateClipInDb(clipId, tmpClipPath, newClipFile)
                     if (hadClip)
                         loadClipNoCapture(currentData)
                     deleteIfExists(currentData)
+                    deleteIfExists(newClipFile)
                 endif
                 deleteIfExists(tmpClipPath)
                 keepRun = 1
