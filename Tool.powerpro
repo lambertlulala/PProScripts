@@ -19,122 +19,18 @@ function copyNewGUID()
     do("pwsh.exe", "-Command [guid]::NewGuid().toString() | clip")
 endfunction
 
-function convertToLinuxPath(path)
-    local resultPath
-
-    if (find(path, ?+\\wsl+) != -1) do
-        local cvt = path.replacechars("\\", "/")
-        local pos = 2
-        cvt = slice(cvt, pos, length(cvt) - 1)
-        for (local i = 0; i < 2; i++)
-            pos = find(cvt, "/")
-            if (pos != -1) do
-                cvt = slice(cvt, pos + 1, length(cvt) - 1)
-            endif
-        endfor
-        resultPath = "/" ++ cvt
-    else
-        local command = "wsl wslpath " ++ "\"" ++ path ++ "\""
-        local tmpFile = env("TEMP") ++ "\\tmp_convert.txt"
-        file.runwait(30000, "cmd.exe", "/c " ++ command ++ " > " ++ tmpFile, "", "hide")
-        resultPath = file.readall(tmpFile)
+function everythingSearchRedirectToTmpFile(searchPattern)
+    local searchResult = ""
+    // Unique name: file.runwait pumps messages, so another script may run this concurrently
+    local tmpFile = env("TEMP") ++ "\\tmp_es_result_" ++ timesec ++ "_" ++ random(1000000) ++ ".txt"
+    local exitCode = file.runwait(60000, "es.exe", searchPattern ++ " -export-txt " ++ quoteWindowsArgument(tmpFile), "", "hide")
+    // 9999999 = timed out (es.exe may still be writing); other non-zero = es.exe error
+    if (exitCode === "0") do
+        searchResult = file.readall(tmpFile)
+    endif
+    if (file.validpath(tmpFile)) do
         file.deletenorecycle(tmpFile)
     endif
-
-    return(resultPath.removechars("\r\n"))
-endfunction
-
-function everythingSearchRedirectToTmpFile(searchPattern)
-    local searchResult
-    local tmpFile = env("TEMP") ++ "\\tmp_es_result.txt"
-    file.runwait(60000, "es.exe", searchPattern ++ " -export-txt " ++ tmpFile, "", "hide")
-    searchResult = file.readall(tmpFile)
-    file.deletenorecycle(tmpFile)
-    return(searchResult)
-endfunction
-
-function filterClipsWithES(text)
-    local searchPattern = pprofolder ++ "clip\\*.powerproclip" ++ " utf16content:" ++ "\"" ++ text ++ "\""
-    local results = everythingSearchRedirectToTmpFile(searchPattern)
-    return(results)
-endfunction
-
-function searchClipTextWithES(clipFolder, clipFolderLen, inputTitle)
-    local result = 0
-    local textToSearch = input("Search clip text with ES")
-    if (textToSearch) do
-        local filteredResult = filterClipsWithES(textToSearch)
-        local filteredCandidates
-        for each line clip in filteredResult
-            local item = remove(clip, clipFolderLen)
-            local pos = revfind(item, ".PowerProClip")
-            item = slice(item, pos)
-            filteredCandidates = filteredCandidates ++ item ++ "\r"
-        endfor
-
-        setnextdialogpos(win.vscreenwidth / 2 - 400, win.vscreenheight / 2 - 200, 800, 400, "topmost")
-        local pickedResult = pickstring(filteredCandidates, inputTitle, 2)
-        if (pickedResult) do
-            clip.load(clipFolder ++ pickedResult ++ ".PowerProClip")
-            result = 1
-        endif
-    endif
-
-    return(result)
-endfunction
-
-function searchClipTextWithPwsh(clipFolder, clipFolderLen, inputTitle)
-    local result = 0
-    local textToSearch = input("Search clip text with Pwsh")
-    if (textToSearch) do
-        local filteredResult = searchTextInAllClipFiles(textToSearch)
-        local filteredCandidates
-        for each line clip in filteredResult
-            local item = remove(clip, clipFolderLen)
-            local pos = revfind(item, ".PowerProClip")
-            item = slice(item, pos)
-            filteredCandidates = filteredCandidates ++ item ++ "\r"
-        endfor
-
-        setnextdialogpos(win.vscreenwidth / 2 - 400, win.vscreenheight / 2 - 200, 800, 400, "topmost")
-        local pickedResult = pickstring(filteredCandidates, inputTitle, 2)
-        if (pickedResult) do
-            clip.load(clipFolder ++ pickedResult ++ ".PowerProClip")
-            result = 1
-        endif
-    endif
-
-    return(result)
-endfunction
-
-function searchFile(searchPattern)
-    local searchResult
-    local tmpFile = env("TEMP") ++ "\\tmp_search_result.txt"
-    file.runwait(3600000, "cmd.exe", "/c dir /s/b/O-D " ++ "\"" ++ searchPattern ++ "\"" ++ " > " ++ tmpFile, "", "hide")
-    searchResult = file.readall(tmpFile)
-    file.deletenorecycle(tmpFile)
-    return(ansitoutf8(searchResult))
-endfunction
-
-function listAllClipFiles(baseFolder)
-    local searchResult
-    local tmpFile = env("TEMP") ++ "\\tmp_search_result.txt"
-    local folder = trim(baseFolder, "\\", 2)
-    local cmd = "cd " ++ "\"" ++ folder ++ "\"" ++ " && Get-ChildItem -Recurse \"*.powerproclip\" | Sort-Object LastWriteTime -Descending | ForEach-Object { $_.FullName }"
-    file.runwait(3600000, "pwsh.exe", "-Command " ++ cmd ++ " > " ++ tmpFile, "", "hide")
-    searchResult = file.readall(tmpFile)
-    file.deletenorecycle(tmpFile)
-    return(searchResult)
-endfunction
-
-function searchTextInAllClipFiles(searchText)
-    local searchResult
-    local tmpFile = env("TEMP") ++ "\\tmp_search_text_result.txt"
-    local baseFolder = pprofolder ++ "clip"
-    local cmd = "cd " ++ "\"" ++ baseFolder ++ "\"" ++ " && Get-ChildItem -Recurse \"*.powerproclip\" | Select-String -Pattern " ++ "\"" ++ searchText ++ "\"" ++ " -Encoding \"utf-16\" | Select-Object -ExpandProperty Path"
-    file.runwait(3600000, "pwsh.exe", "-Command " ++ cmd ++ " > " ++ tmpFile, "", "hide")
-    searchResult = file.readall(tmpFile)
-    file.deletenorecycle(tmpFile)
     return(searchResult)
 endfunction
 
@@ -142,17 +38,18 @@ function searchAndPickResult(barName)
     local result
     for (local run = 1; run;)
         local searchPattern = input("Search")
-        if (searchPattern) do
+        // Compare with "" explicitly: a plain `if (x)` treats the input "0" as false
+        if (searchPattern !== "") do
             if (cl.exists(barName)) do
                 local hBar = cl.getBarHandle(barName)
                 win.setfocus(hBar)
             endif
 
             local searchResult = everythingSearchRedirectToTmpFile(searchPattern)
-            if (searchResult) do
+            if (searchResult !== "") do
                 setnextdialogpos(win.vscreenwidth / 2 - 400, win.vscreenheight / 2 - 200, 800, 400, "topmost")
                 result = pickstring(searchResult, "Pick Result", 2)
-                if (result) do
+                if (result !== "") do
                     run = 0
                 endif
             endif
@@ -228,7 +125,7 @@ endfunction
 
 function navigateToFolder(barName)
     local item = searchAndPickResult(barName)
-    if (!item) do
+    if (item === "") do
         quit
     endif
 
@@ -243,7 +140,13 @@ function navigateToFolder(barName)
         endif
     endif
 
-    *Keys {to *} ^l{w1}&(folder){enter}
+    if (folder === "") do
+        quit
+    endif
+
+    // Escape Keys special characters so the path is typed literally: { -> {{}, % -> {%}, ^ -> {^}, + -> {+}
+    local keysText = replaceg(folder, ?|([{%^+])|, ?|{\1}|)
+    do("Keys", "{to *}^l{w1}" ++ keysText ++ "{enter}")
 endfunction
 
 function insertDateTime()
@@ -290,13 +193,15 @@ function runCommand(barName)
             endif
 
             if ("" != candidate) do
-                local params
+                // inputdialog assigns variables by name; use a global so the value is
+                // guaranteed to be visible here (it is not documented to set locals)
+                global _toolRunCommandParams = ""
                 title = "Parameters for " ++ candidate ++ " (" ++ scriptname ++ ")"
                 eventHandle = .CustomEvent@createShowWindowEvent(title, 50, 3)
-                local result = inputdialog("params=Parameters", title)
+                local result = inputdialog("_toolRunCommandParams=Parameters", title)
                 .CustomEvent@destroyShowWindowEvent(eventHandle)
                 if (result) do
-                    do(candidate, params)
+                    do(candidate, _toolRunCommandParams)
                 endif
             endif
         endif
@@ -310,18 +215,25 @@ function openWith(path)
     local eventHandle = .CustomEvent@createShowWindowEvent(title, 50, 3)
     local executable = pickstring("Far Manager\rDouble Commander\rTerminal\rEmacs\r", title, 2)
     if (executable) do
+        // quoteWindowsArgument doubles a trailing backslash, so "D:\" is not read as an escaped quote
+        local quotedPath = quoteWindowsArgument(path)
+        // Open Terminal in the folder itself; file.folder() would give the parent of a folder
+        local termFolder = path
+        if (!file.isfolder(path)) do
+            termFolder = file.folder(path)
+        endif
         switch (_pickedline_)
             case 1
-                do(?+C:\Program Files\Far Manager\Far.exe+, "\"" ++ path ++ "\"")
+                do(?+C:\Program Files\Far Manager\Far.exe+, quotedPath)
                 break
             case 2
-                do(?+C:\Program Files\Double Commander\doublecmd.exe+, "-L " ++ "\"" ++ path ++ "\"")
+                do(?+C:\Program Files\Double Commander\doublecmd.exe+, "-L " ++ quotedPath)
                 break
             case 3
-                do(?+"wt.exe"+, ?+new-tab -p "Command Prompt" -d+ ++ " " ++ "\"" ++ file.folder(path) ++ "\"")
+                do(?+"wt.exe"+, ?+new-tab -p "Command Prompt" -d+ ++ " " ++ quoteWindowsArgument(termFolder))
                 break
             case 4
-                do(?+"C:\emacs\ucrt\nightly\bin\emacsclientw.exe"+, ?+-na ""+ ++ " " ++ "\"" ++ path ++ "\"")
+                do(?+"C:\emacs\ucrt\nightly\bin\emacsclientw.exe"+, ?+-na ""+ ++ " " ++ quotedPath)
                 break
         endswitch
     endif
