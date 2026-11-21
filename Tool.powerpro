@@ -1,8 +1,4 @@
 
-function _autoinit_()
-    global gMapWindowBlackList = map.create(1)
-endfunction
-
 function copyFile(srcPath, dstPath)
     if (file.copy(srcPath, dstPath)) do
         *Message Successfully copy &(srcPath) to &(dstPath)
@@ -186,6 +182,8 @@ function switchToWindow(barName, width, height)
 
     local wlist = window("visiblewindow", "*")
     local windowList
+    // handles[i] is the window shown on line i+1 of the list (pickstring flag 2 = unsorted)
+    local handles = vec.create(32, 16)
     for (local j = 1; ; j++)
         local handle = word(wlist, j)
         if (handle == "") do
@@ -206,13 +204,8 @@ function switchToWindow(barName, width, height)
         local text = win.gettext(handle)
         if (text != "") do
             local fullPath = window("exefullpath", handle)
-            local pos = revfind(fullPath, "\\")
-            local len = length(fullPath)
-            local filename = slice(fullPath, pos + 1, len)
-            if ("" == gMapWindowBlackList.get(filename)) do
-                local display = "[" ++ handle ++ "]    " ++ text ++ "    (" ++ fullPath ++ ")"
-                windowList = windowList ++ display ++ "\r"
-            endif
+            handles[handles.length] = handle
+            windowList = windowList ++ text ++ "    (" ++ fullPath ++ ")\r"
         endif
     endfor
 
@@ -225,23 +218,20 @@ function switchToWindow(barName, width, height)
     .CustomEvent@destroyShowWindowEvent(eventHandle)
     local switched = 0
     if (sel) do
-        local idxBeg = find(sel, "[")
-        local idxEnd = find(sel, "]")
-        if (idxBeg != -1 && idxEnd != -1 && idxEnd -1 >= idxBeg) do
-            local handle = slice(sel, idxBeg + 1, idxEnd - 1)
-            window.show(handle)
-            switched = 1
+        // _pickedline_ is the 1-based index of the picked line in the full (unfiltered) list
+        local idx = _pickedline_ - 1
+        if (idx >= 0 && idx < handles.length) do
+            local h = handles[idx]
+            // The window may have been closed while the dialog was open
+            if (win.exists(h)) do
+                window.show(h)
+                switched = 1
+            endif
         endif
     endif
 
     if (0 == switched) do
         win.resetfocus(15)
-    endif
-endfunction
-
-function addWindowBlackList(exeName, value)
-    if ("" != exeName && "" != value) do
-        gMapWindowBlackList[exeName]=value
     endif
 endfunction
 
