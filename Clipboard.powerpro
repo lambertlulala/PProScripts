@@ -54,21 +54,32 @@ function runSql(sql, outFile, maxWait)
     return(exitCode !== "" && exitCode == 0)
 endfunction
 
-// Runs a SELECT and returns its output text ("" if it failed).
-function querySql(sql)
-    local outFile = makeTempBase("out") ++ ".txt"
-    local result = ""
-    runSql(sql, outFile, 0)
-    if (file.validpath(outFile))
-        result = file.readall(outFile)
-    deleteIfExists(outFile)
-    return(result)
-endfunction
-
-// SELECT producing the picker lines "[id][TAGS: tags] first 256 chars on one line".
-function listSql(whereClause, tail)
+// Lists clips for the picker. Returns a struct {lines, ids}:
+//   lines: one "[TAGS: tags] first 256 chars on one line" per clip, for pickstring
+//   ids:   vec where ids[i] is the ClipId shown on line i+1
+// Both SELECTs run in one sqlite3 call inside one read transaction, so a clip captured
+// meanwhile cannot shift the two outputs against each other (the capture waits via .timeout).
+// The "[TAGS: ...]" prefix keeps every line non-empty, so line numbers always match ids.
+function queryClipList(whereClause, tail)
+    local base = makeTempBase("list")
+    local idsFile = base ++ "_ids.txt"
+    local linesFile = base ++ "_lines.txt"
     local preview = "substr(replace(replace(CAST(TextData AS TEXT), char(13), ' '), char(10), ' '), 1, 256)"
-    return("SELECT printf('[%d][TAGS: %s] %s', ClipId, ClipTags, " ++ preview ++ ") FROM Clipboard " ++ whereClause ++ " ORDER BY ClipId DESC" ++ tail ++ ";")
+    local fromPart = " FROM Clipboard " ++ whereClause ++ " ORDER BY ClipId DESC" ++ tail ++ ";\n"
+    local sql = "BEGIN;\n.mode list\n.output '" ++ idsFile ++ "'\nSELECT ClipId" ++ fromPart
+    sql ++= ".output '" ++ linesFile ++ "'\nSELECT printf('[TAGS: %s] %s', ClipTags, " ++ preview ++ ")" ++ fromPart
+    sql ++= ".output stdout\nCOMMIT;"
+    local result = class.makestruct("lines ids")
+    if (runSql(sql, "", 0) && file.validpath(idsFile) && file.validpath(linesFile)) do
+        result.lines = file.readall(linesFile)
+        result.ids = vec.createfromlines(file.readall(idsFile), 16)
+    else
+        result.lines = ""
+        result.ids = vec.create(1, 16)
+    endif
+    deleteIfExists(idsFile)
+    deleteIfExists(linesFile)
+    return(result)
 endfunction
 
 // The copying program may still hold the clipboard open; clip.save then fails silently,
@@ -158,25 +169,25 @@ function createClipboardDbIfNonexistent()
 endfunction
 
 function listClipsFromDb()
-    return(querySql(listSql("", "")))
+    return(queryClipList("", ""))
 endfunction
 
 function listLimitedNumberOfClipsFromDb(limitedCount)
     if (!isNumber(limitedCount) || limitedCount <= 0)
         limitedCount = CLIP_DEFAULT_CLIP_LIMIT_COUNT
-    return(querySql(listSql("", " LIMIT " ++ limitedCount)))
+    return(queryClipList("", " LIMIT " ++ limitedCount))
 endfunction
 
 function listAllClipsWithTagsFromDb()
-    return(querySql(listSql("WHERE ClipTags IS NOT NULL AND ClipTags != ''", "")))
+    return(queryClipList("WHERE ClipTags IS NOT NULL AND ClipTags != ''", ""))
 endfunction
 
 function searchClipsInDb(text)
-    return(querySql(listSql("WHERE TextData LIKE " ++ sqlLikeContains(text), "")))
+    return(queryClipList("WHERE TextData LIKE " ++ sqlLikeContains(text), ""))
 endfunction
 
 function searchClipsWithTagsInDb(tags)
-    return(querySql(listSql("WHERE ClipTags LIKE " ++ sqlLikeContains(tags), "")))
+    return(queryClipList("WHERE ClipTags LIKE " ++ sqlLikeContains(tags), ""))
 endfunction
 
 function createPProClipFileFromDb(clipId)
@@ -282,10 +293,17 @@ function handleClipboardInDb(clipLimitCount)
 
         setnextdialogpos(win.vscreenwidth / 2 - 400, win.vscreenheight / 2 - 200, 800, 400, "topmost")
         local eventHandle = .CustomEvent@createShowWindowEvent(inputTitle, 100, 20)
-        local picked = pickstring(candidates, inputTitle, 2)
+        local picked = pickstring(candidates.lines, inputTitle, 2)
         .CustomEvent@destroyShowWindowEvent(eventHandle)
         if (picked) do
-            local clipId = getClipId(picked)
+            // _pickedline_ is the 1-based index of the picked line in the full (unfiltered) list
+            local ids = candidates.ids
+            local idx = _pickedline_ - 1
+            local clipId = 0
+            if (idx >= 0 && idx < ids.length)
+                clipId = ids[idx]
+            if (!isNumber(clipId))
+                clipId = 0
             eventHandle = .CustomEvent@createShowWindowEvent(inputTitle, 100, 20)
             clipActionInfo = doActionOnClip(clipId, inputTitle)
             .CustomEvent@destroyShowWindowEvent(eventHandle)
@@ -296,19 +314,6 @@ function handleClipboardInDb(clipLimitCount)
     endfor
 
     win.resetfocus(15)
-endfunction
-
-// Returns the numeric id from "[id][TAGS: ...] ...", or 0 if there is none.
-function getClipId(srcClip)
-    local clipId = 0
-    local idxBeg = find(srcClip, "[")
-    local idxEnd = find(srcClip, "]")
-    if (idxBeg != -1 && idxEnd != -1 && idxEnd -1 >= idxBeg) do
-        clipId = slice(srcClip, idxBeg + 1, idxEnd - 1)
-    endif
-    if (!isNumber(clipId))
-        clipId = 0
-    return(clipId)
 endfunction
 
 function doActionOnClip(clipId, inputTitle)
