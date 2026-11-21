@@ -197,6 +197,12 @@ function switchToWindow(barName, width, height)
             continue
         endif
 
+        // Skip windows hidden (cloaked) by Windows, e.g. TextInputHost.exe (Windows Input Experience)
+        // and suspended UWP app windows. Note: windows on other Windows virtual desktops are cloaked too.
+        if (win.getcloaked(handle) != 0) do
+            continue
+        endif
+
         local text = win.gettext(handle)
         if (text != "") do
             local fullPath = window("exefullpath", handle)
